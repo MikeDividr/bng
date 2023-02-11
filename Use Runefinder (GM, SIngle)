@@ -1,0 +1,42 @@
+let spiritID = args[0]
+let usedItemID = args[1]
+let chosenRolltableName = args[2]
+let rollId = args[3]
+let rollSource = args[4]
+let newItemName = args[5]
+let newItemImage = args[6]
+let skullcoinCost = args[7]
+let itemImage = args[8]
+
+const spirit = game.actors.find(a=>a.id == spiritID)
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+let actorSkullcoin = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Skullcoin")._id))
+let usedItem = await userItems.getDocument(usedItemID)
+
+await usedItem.update({"data.quantity": usedItem.data.data.quantity - 1});
+if(usedItem.data.data.quantity < 1){usedItem.delete();};
+actorSkullcoin.update({"data.quantity": actorSkullcoin.data.data.quantity - skullcoinCost});
+
+const itemCompendium = game.packs.get(rollSource)
+const newItem = await itemCompendium.getDocument(rollId)
+let currentItem = undefined
+if(userItems.index.find(ent=>ent.name === newItemName)){currentItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName)._id))}
+if(currentItem == undefined){await Item.createDocuments([newItem.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} 
+else {await currentItem.update({"data.quantity": currentItem.data.data.quantity + 1});};
+
+const dateAndTime = new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"}) + " pacific";
+let recordCompendium = game.packs.find(p=>p.metadata.label === "Info: BnG " + spirit.name)
+let record = (await recordCompendium.getDocument(recordCompendium.index.find(ent=>ent.name == "Finding Record " + spirit.name)._id))
+let message = `
+    <p style="text-align: center"><b>${spirit.name}</b> found a rune</p>
+    <table style="width: 100%;" border="1">
+    <tr style="align-item: center;">
+        <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="25"/></td>
+        <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+        <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage} width="25"/></td>
+        <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName}</td>
+    </tr>
+    </table>
+`
+record.update({content:`<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName}]</p>` + record.data.content})
+ChatMessage.create({speaker: {alias: "Finding Circle"}, content: message})
