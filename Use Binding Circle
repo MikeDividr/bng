@@ -1,0 +1,89 @@
+const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+
+let GMs = game.users.filter(u=>u.data.role == 4); let onlineGM = false
+for(g of GMs){if(g.active == true){onlineGM = true}}
+if(onlineGM == false){erSound(); ui.notifications.error("you can't use this while there isn't a GM logged in"); return;}
+
+if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use the finding circle.'); return;} 
+let spirit = {};
+if(game.users.current.data.role == 4){
+    if(args[0] === "clicked"){erSound(); ui.notifications.warn("GMs can't click to activate! Only players can. GMs must place a token to activate."); return}; spirit = token.actor;
+} else {spirit = game.actors.find(a=>a.name === game.users.current.data.name)}
+if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+
+const tutorialCheck = [{string: "tutorial1", message: "You must go to the Finding Circle before you can use this circle"}]
+for(tu of tutorialCheck){if(spirit.data.flags["gm-notes"].notes.includes(tu.string)){erSound(); ui.notifications.warn(tu.message); return;}}
+
+const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "binding-click")
+let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+if(args[0] == "clicked"){
+    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to activate it"); return}
+}
+if(args[0] == "clicked" || args[0] == "stepped"){await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/sfx_conj_enchantment.mp3", volume: 0.5}, false)}
+
+let dialogCircleMenu = new Dialog({
+    title: "Binding Circle",
+    content: `
+    <style>
+    .image {position: relative; margin-left: auto; margin-right: auto; width: 100px;}
+    .image__img {display: block; width: 100%;}
+    .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+    .image__overlay--blur {backdrop-filter: blur(5px);}
+    .image__overlay--primary {background: #e57509;}
+    .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+    .image__overlay:hover {opacity: 0.8;}
+    .image__overlay:hover > * {transform: translateY(0);}
+    .image__title {font-weight: bold; text-align: center;}
+    </style>
+    <table style="width: 100%; border-style: hidden;" border="1">
+        <tr>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Create Vessel</b></td>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Sacrifice Vessel</b></td>
+        </tr>
+        <tr>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src="icons/magic/nature/symbol-sun-yellow.webp" width="75">
+                <div class="image__overlay image__overlay--primary" id="createId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src="icons/magic/nature/symbol-moon-stars-white.webp" width="75">
+                <div class="image__overlay image__overlay--primary" id="sacrificeId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Bind Item</b></td>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Unbind Item</b></td>
+        </tr>
+        <tr>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src="icons/skills/melee/weapons-crossed-swords-black-gray.webp" width="75">
+                <div class="image__overlay image__overlay--primary" id="bindId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src="icons/skills/melee/weapons-crossed-swords-black.webp" width="75">
+                <div class="image__overlay image__overlay--primary" id="unbindId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    `,
+    buttons: {
+        buttonCancel: {
+            label: `Cancel`
+        }
+    },
+    render: (html) => {
+        html.find("#createId").click(async function () {game.macros.find(m=>m.name==="Create Vessels 01 (Choose Runes)").execute(spirit.id); await dialogCircleMenu.close();})
+        html.find("#sacrificeId").click(async function () {game.macros.find(m=>m.name==="Sacrifice Vessels 01 (Choose Keep)").execute(spirit.id); await dialogCircleMenu.close();})
+        html.find("#bindId").click(async function () {game.macros.find(m=>m.name==="Bind Items 01 (Choose Vessel)").execute(spirit.id); await dialogCircleMenu.close();})
+        html.find("#unbindId").click(async function () {game.macros.find(m=>m.name==="Unbind Items 01 (Choose Vessel)").execute(spirit.id); await dialogCircleMenu.close();})
+    }
+}, {width: 300, height: 360}).render(true);
