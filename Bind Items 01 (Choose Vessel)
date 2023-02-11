@@ -1,0 +1,423 @@
+chooseVessel()
+
+async function chooseVessel(){
+    const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+    if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use this circle.'); return;} 
+    let spirit = game.actors.find(a=>a.id === args[0]);
+    if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+    
+    const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "binding-click")
+    let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); return}
+
+    const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + spirit.name)
+    const filter = userActors.index.filter(ent=>ent.type === "character")
+    const entries = []; for(f of filter){entries.push(await userActors.getDocument(f._id))}
+    let vesselChoices = entries.filter(v=>v.data.data.details.playerName == spirit.name && v.data.flags["gm-notes"].notes.includes("this is a vessel"))
+
+    vesselChoices.sort(function(a, b) {
+        if (a.data.name.toLowerCase() < b.data.name.toLowerCase()) return -1;
+        if (a.data.name.toLowerCase() > b.data.name.toLowerCase()) return 1;
+        return 0;
+    });
+
+    let vesselGrid = ``
+    for (vess of vesselChoices){
+
+        let inventoryScattered = vess.items.filter(ent=>
+            ent.type !== "background" && 
+            ent.type !== "class" && 
+            ent.type !== "subclass" && 
+            ent.type !== "feat" && 
+            ent.type !== "spell"
+        )
+        inventoryScattered.sort(function(a, b) {
+            if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+            if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+            return 0;
+        });
+
+        let weaponsCount = 0; for(inv of inventoryScattered){if(
+            inv.name.includes("Arrow") || 
+            inv.name.includes("Crossbow Bolt") || 
+            inv.name.includes("Sling Bullet") || 
+            inv.name.includes("Blowgun Needle") || 
+            inv.name.includes("Club") || 
+            inv.name.includes("Dagger") || 
+            inv.name.includes("Greatclub") || 
+            inv.name.includes("Handaxe") || 
+            inv.name.includes("Javelin") || 
+            inv.name.includes("Light Hammer") || 
+            inv.name.includes("Mace") || 
+            inv.name.includes("Quarterstaff") || 
+            inv.name.includes("Sickle") || 
+            inv.name.includes("Spear") || 
+            inv.name.includes("Light Crossbow") || 
+            inv.name.includes("Dart") || 
+            inv.name.includes("Shortbow") || 
+            inv.name.includes("Sling") || 
+            inv.name.includes("Battleaxe") || 
+            inv.name.includes("Flail") || 
+            inv.name.includes("Glaive") || 
+            inv.name.includes("Greataxe") || 
+            inv.name.includes("Greatsword") || 
+            inv.name.includes("Halberd") || 
+            inv.name.includes("Lance") || 
+            inv.name.includes("Longsword") || 
+            inv.name.includes("Maul") || 
+            inv.name.includes("Morningstar") || 
+            inv.name.includes("Pike") || 
+            inv.name.includes("Rapier") || 
+            inv.name.includes("Scimitar") || 
+            inv.name.includes("Shortsword") || 
+            inv.name.includes("Trident") || 
+            inv.name.includes("War Pick") || 
+            inv.name.includes("Warhammer") || 
+            inv.name.includes("Whip") || 
+            inv.name.includes("Blowgun") || 
+            inv.name.includes("Hand Crossbow") || 
+            inv.name.includes("Heavy Crossbow") || 
+            inv.name.includes("Longbow") || 
+            inv.name.includes("Net")
+            ){weaponsCount++}
+        }
+
+        let armorCount = 0; for(inv of inventoryScattered){if(
+            inv.name.includes("Padded Armor") || 
+            inv.name.includes("Leather Armor") || 
+            inv.name.includes("Studded Leather Armor") || 
+            inv.name.includes("Hide Armor") || 
+            inv.name.includes("Chain Shirt") || 
+            inv.name.includes("Scale Mail") || 
+            inv.name.includes("Spiked Armor") || 
+            inv.name.includes("Breastplate") || 
+            inv.name.includes("Half Plate Armor") || 
+            inv.name.includes("Ring Mail") || 
+            inv.name.includes("Chain Mail") || 
+            inv.name.includes("Splint Armor") || 
+            inv.name.includes("Plate Armor") || 
+            Boolean(inv.name.includes("Shield") && inv.type == "equipment")
+            ){armorCount++}
+        }
+        
+        let equipmentCount = 0; for(inv of inventoryScattered){if(
+            inv.type == "tool" || 
+            inv.type == "loot" || 
+            inv.type == "backpack" || 
+            inv.name.includes("Wand") || 
+            inv.name.includes("Rod") || 
+            inv.name.includes("Staff") || 
+            inv.name.includes("Arcane Focus") || 
+            inv.name.includes("Druidic Focus") || 
+            inv.name.includes("Holy Symbol") || 
+            inv.name.includes("Instrument")
+            ){equipmentCount++}
+        }
+        
+        let usablesCount = 0; for(inv of inventoryScattered){if(
+            inv.name.includes("Potion") || 
+            inv.name.includes("Oil") || 
+            Boolean(inv.name.includes("Poison") && inv.type !== "equipment") || 
+            inv.name.includes("Ointment") || 
+            inv.name.includes("Scroll") || 
+            inv.name == "Burnt Othur Fumes" || 
+            inv.name == "Carrion Crawler Mucus" || 
+            inv.name == "Malice" || 
+            inv.name == "Serpent Venom" || 
+            inv.name.includes("50g") || 
+            inv.name.includes("100g") || 
+            inv.name.includes("150g") || 
+            inv.name.includes("500g") || 
+            inv.name.includes("999g") || 
+            inv.name.includes("1000g") || 
+            inv.name.includes("5000g") || 
+            inv.name.includes("Charcoal, Incense, and Herbs") || 
+            inv.name.includes("Brass Brazier") || 
+            inv.name.includes("Pearl") || 
+            inv.name.includes("Lead-Based Ink") || 
+            inv.name.includes("Hempen Rope (25 feet)") || 
+            inv.name.includes("Augury Tokens") || 
+            inv.name.includes("Platinum Ring") || 
+            inv.name.includes("Dust") || 
+            inv.name.includes("Jeweled Horn") || 
+            inv.name.includes("Glass Eye") || 
+            inv.name.includes("Holy Water (Flask)") || 
+            inv.name.includes("Vial of Blood") || 
+            inv.name.includes("Gem With Tears") || 
+            inv.name.includes("Gilded") || 
+            inv.name.includes("Incense and an Offering") || 
+            inv.name.includes("Eyeball Encased in Gem") || 
+            inv.name.includes("Platinum-Inlaid Vial") || 
+            inv.name.includes("Metal Lockbox") || 
+            inv.name.includes("Gold-Inlaid Vial") || 
+            inv.name.includes("Sunburst Pendant") || 
+            inv.name.includes("Herbs, Oils, and Incense") || 
+            inv.name.includes("Rare Oils and Unguents") || 
+            inv.name.includes("Scrying Focus") || 
+            inv.name.includes("Crystal Ball") || 
+            inv.name.includes("Golden Reliquary") || 
+            inv.name.includes("Statuette of Yourself") || 
+            inv.name == "Clay" || 
+            inv.name == "Ash" || 
+            inv.name.includes("Mandrake Root") || 
+            inv.name.includes("Jewel-Encrusted Dagger") || 
+            inv.name.includes("Gem-Encrusted Bowl") || 
+            inv.name.includes("Ornamental Container") || 
+            inv.name.includes("Tiny Silver Cage") || 
+            inv.name.includes("Ruby Vial") || 
+            inv.name.includes("Planar Symbol") || 
+            inv.name.includes("Miniature Platinum Sword") || 
+            inv.name.includes("Planar Tuning Fork") || 
+            inv.name.includes("Platinum Cord") || 
+            inv.name.includes("Cloning Vessel") || 
+            inv.name.includes("Shard of Onyx") || 
+            inv.name.includes("Tiny Reliquary") || 
+            inv.name.includes("Piece of Adamantine") || 
+            inv.name.includes("Jade Circlet") || 
+            inv.name.includes("Hourglass")
+            ){usablesCount++}
+        }
+        
+        let motesCount = 0; for(inv of inventoryScattered){if(
+            inv.name.includes("Mote (")
+            ){motesCount++}
+        }
+        
+        let relicsCount = 0; for(inv of inventoryScattered){if(
+            inv.name.includes("Relic (")
+            ){relicsCount++}
+        }
+
+        let weaponsColor = "#ffffff"; if(weaponsCount <= 0){weaponsColor = "#ff0000"}
+        let armorColor = "#ffffff"; if(armorCount <= 0){armorColor = "#ff0000"}
+        let equipmentColor = "#ffffff"; if(equipmentCount <= 0){equipmentColor = "#ff0000"}
+        let usablesColor = "#ffffff"; if(usablesCount <= 0){usablesColor = "#ff0000"}
+        let motesColor = "#ffffff"; if(motesCount <= 0){motesColor = "#ff0000"}
+        let relicsColor = "#ffffff"; if(relicsCount <= 0){relicsColor = "#ff0000"}
+
+        vesselGrid += `
+        <div class="image-grid">
+        <div class="vessel">
+            <div class="image">
+                <img class="image__img" src=${vess.img}>
+                <div class="image__overlay image__overlay--primary" onclick="inspectVessel${vess.id}()"><div class="image__title" style="font-size: 1.5em;">Inspect</div></div>
+            </div>
+            <script>
+                async function inspectVessel${vess.id}(){
+                    Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Actor')).forEach(async win=> await win.close())
+                    const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + "${spirit.name}")
+                    const actor = (await userActors.getDocument("${vess.id}"))
+                    actor.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$("#actor-${vess.id}").find("a[data-tab='inventory']")[0].click())
+                }
+            </script>
+        </div>
+        <div class="name">
+            <h1>${vess.name}</h1>
+        </div>
+        <div class="back">
+            <div class="imageSmall">
+                <img class="image__img" src="media/Images/Symbols/Icons/UI/arrow%20(left).webp">
+                <div class="image__overlay image__overlay--primary go__back"><div class="image__title" style="font-size: 0.75em;">Go Back</div></div>
+            </div>
+        </div>
+        <div class="confirm">
+            <div class="imageSmall">
+                <img class="image__img" src="media/Images/Symbols/Icons/UI/arrow%20(right).webp">
+                <div class="image__overlay image__overlay--primary execute" onclick="selectVessel${vess.id}()"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+            </div>
+            <script>
+                async function selectVessel${vess.id}(){
+                    Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Actor')).forEach(async win=> await win.close())
+                    const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + "${spirit.name}")
+                    const actor = (await userActors.getDocument("${vess.id}"))
+                    actor.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$("#actor-${vess.id}").find("a[data-tab='inventory']")[0].click())
+                    game.macros.find(m=>m.name==="Bind Items 02 (Choose Category)").execute("${spirit.id}", "${vess.id}");
+                }
+            </script>
+        </div>
+        <div class="weapons stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Weapons</span>
+                <img class="image__img" src="icons/weapons/axes/axe-hammer-blackened.webp">
+                <div class="image__counter" style="color: ${weaponsColor};"><div class="image__count">${weaponsCount}</div></div>
+            </div>
+        </div>
+        <div class="armor stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Armor</span>
+                <img class="image__img" src="icons/equipment/chest/breastplate-layered-steel.webp">
+                <div class="image__counter" style="color: ${armorColor};"><div class="image__count">${armorCount}</div></div>
+            </div>
+        </div>
+        <div class="equipment stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Equipment</span>
+                <img class="image__img" src="icons/weapons/wands/wand-gem-blue.webp">
+                <div class="image__counter" style="color: ${equipmentColor};"><div class="image__count">${equipmentCount}</div></div>
+            </div>
+        </div>
+        <div class="usables stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Usables</span>
+                <img class="image__img" src="icons/consumables/potions/potion-bottle-stopped-labeled-red.webp">
+                <div class="image__counter" style="color: ${usablesColor};"><div class="image__count">${usablesCount}</div></div>
+            </div>
+        </div>
+        <div class="motes stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Motes</span>
+                <img class="image__img" src="media/Images/Symbols/Icons/Motes/Mote%20(Bel)%20-%20icon.webp">
+                <div class="image__counter" style="color: ${motesColor};"><div class="image__count">${motesCount}</div></div>
+            </div>
+        </div>
+        <div class="relics stat">
+            <div class="icon tooltip">
+                <span class="tooltiptext">${vess.name}'s Relics</span>
+                <img class="image__img" src="media/Images/Symbols/Icons/Relics/Relic%20(Kal)%20-%20icon.webp">
+                <div class="image__counter" style="color: ${relicsColor};"><div class="image__count">${relicsCount}</div></div>
+            </div>
+        </div>
+        <div class="weight">
+            <div class="progress">
+                <div style="width: ${(vess.data.data.attributes.encumbrance.value / vess.data.data.attributes.encumbrance.max) * 100}%; height: 100%; background: #777777;">
+                </div>
+                <span class="progress__text">${vess.data.data.attributes.encumbrance.value} / ${vess.data.data.attributes.encumbrance.max}</span>
+                <span style="position: absolute; top: 50%; left: 33.33%; transform: translateY(-50%); font: bold 18px "Quicksand", sans-serif; color: #ffffff;">|</span>
+                <span style="position: absolute; top: 50%; left: 66.66%; transform: translateY(-50%); font: bold 18px "Quicksand", sans-serif; color: #ffffff;">|</span>
+            </div>
+        </div>
+        </div>
+        `
+    }
+
+    const dialogChooseVessel = new Dialog({
+        title: "Binding Circle",
+        content: `
+        <style>
+        .icon {position: relative; margin-left: auto; margin-right: auto; width: 45px; align-items: center;}
+        .vessel {grid-area: vessel;}
+        .back {grid-area: back;}
+        .name {vertical-align: bottom; grid-area: name;}
+        .stat {font-size: 1.5em; display: flex; align-items: center;}
+        .weapons {grid-area: weapons;}
+        .armor {grid-area: armor;}
+        .equipment {grid-area: equipment;}
+        .usables {grid-area: usables;}
+        .motes {grid-area: motes;}
+        .relics {grid-area: relics;}
+        .weight {grid-area: weight;}
+        .confirm {grid-area: confirm;}
+        .image {position: relative; margin-left: auto; margin-right: auto; width: 100px; align-items: center;}
+        .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+        .image__img {display: block; width: 100%;}
+        .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+        .image__overlay--blur {backdrop-filter: blur(5px);}
+        .image__overlay--primary {background-color: #e57509;}
+        .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+        .image__overlay:hover {opacity: 0.8;}
+        .image__overlay:hover > * {transform: translateY(0);}
+        .image__title {font-weight: bold; text-align: center;}
+        .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);font-family: 'Quicksand', sans-serif;}
+        .image__count {font-size: 1.25em;font-weight: bold;}
+        .image__description {font-size: 1em; margin-top: 0.25em;}
+    
+        .image-grid {
+            box-sizing: border-box;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 0.25fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 0.25fr;
+            grid-template-rows: 30px 50px 20px;
+            grip-gap: 2px;
+            justify-content: space-around;
+            align-content: space-around;
+            align-items: center; 
+            grid-template-areas:
+                "back vessel name name name name name name confirm"
+                "back vessel weapons armor equipment usables motes relics confirm"
+                "back vessel weight weight weight weight weight weight confirm"
+        }
+        .image-grid > img {width: 100%; height: 100%;}
+
+        .progress {
+            position: relative;
+            width: 100%;
+            height: 15px;
+            background: #aaaaaa;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress__text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateY(-50%) translateX(-50%);
+            font: bold 12px "Quicksand", sans-serif;
+            color: #ffffff;
+        }
+        .tooltip{
+            position: relative;
+        }
+        .tooltiptext{
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            background-color: #000000;
+            color: #ffffff;
+            font-size: 14px;
+            white-space: nowrap;
+            padding: 5px 10px;
+            border-radius: 5px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .tooltiptext::before{
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: traslateX(-50%);
+        }
+        .tooltip:hover .tooltiptext{
+            top: -60%;
+            visibility: visible;
+            opacity: 1;
+        }
+        </style>
+    
+        <html>
+        <body>
+        ${vesselGrid}
+        </body>
+        </html>
+        `,
+        buttons: {
+            buttonCancel: {
+                label: `Go Back`,
+                callback: async () => {
+                    Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Actor')).forEach(async win=> await win.close())
+                    tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseVessel.close(); return}
+                    game.macros.find(m=>m.name==="Use Binding Circle").execute();
+                }
+            }
+        },
+        render: (html) => {
+            html.find(".go__back").click(async function () {
+                await dialogChooseVessel.close();
+                Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Actor')).forEach(async win=> await win.close())
+                tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseVessel.close(); return}
+                game.macros.find(m=>m.name==="Use Binding Circle").execute();
+            })
+            html.find(".execute").click(async function () {
+                await dialogChooseVessel.close();
+            })
+        }
+    }, {width: 600, top: 0, left: 0}).render(true);
+    
+}
