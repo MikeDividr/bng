@@ -1,0 +1,184 @@
+let rollId0 = args[0]
+let rollId1 = args[1]
+let rollId2 = args[2]
+let rollId3 = args[3]
+let rollId4 = args[4]
+let rollId5 = args[5]
+let rollId6 = args[6]
+let rollId7 = args[7]
+let rollId8 = args[8]
+let rollId9 = args[9]
+
+let rollSource0 = args[10]
+let rollSource1 = args[11]
+let rollSource2 = args[12]
+let rollSource3 = args[13]
+let rollSource4 = args[14]
+let rollSource5 = args[15]
+let rollSource6 = args[16]
+let rollSource7 = args[17]
+let rollSource8 = args[18]
+let rollSource9 = args[19]
+
+let newItemName0 = args[20]
+let newItemName1 = args[21]
+let newItemName2 = args[22]
+let newItemName3 = args[23]
+let newItemName4 = args[24]
+let newItemName5 = args[25]
+let newItemName6 = args[26]
+let newItemName7 = args[27]
+let newItemName8 = args[28]
+let newItemName9 = args[29]
+
+let newItemImage0 = args[30]
+let newItemImage1 = args[31]
+let newItemImage2 = args[32]
+let newItemImage3 = args[33]
+let newItemImage4 = args[34]
+let newItemImage5 = args[35]
+let newItemImage6 = args[36]
+let newItemImage7 = args[37]
+let newItemImage8 = args[38]
+let newItemImage9 = args[39]
+
+let spiritID = args[40]
+let usedItemID = args[41]
+let chosenRolltableName = args[42]
+let skullcoinCostBulk = args[43]
+let itemImage = args[44]
+
+const spirit = game.actors.find(a=>a.id == spiritID)
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+let actorSkullcoin = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Skullcoin")._id))
+let usedItem = await userItems.getDocument(usedItemID)
+
+await usedItem.update({"data.quantity": usedItem.data.data.quantity - 10});
+if(usedItem.data.data.quantity < 1){usedItem.delete();};
+actorSkullcoin.update({"data.quantity": actorSkullcoin.data.data.quantity - skullcoinCostBulk});
+
+const itemCompendium0 = game.packs.get(rollSource0)
+const itemCompendium1 = game.packs.get(rollSource1)
+const itemCompendium2 = game.packs.get(rollSource2)
+const itemCompendium3 = game.packs.get(rollSource3)
+const itemCompendium4 = game.packs.get(rollSource4)
+const itemCompendium5 = game.packs.get(rollSource5)
+const itemCompendium6 = game.packs.get(rollSource6)
+const itemCompendium7 = game.packs.get(rollSource7)
+const itemCompendium8 = game.packs.get(rollSource8)
+const itemCompendium9 = game.packs.get(rollSource9)
+
+const newItem0 = await itemCompendium0.getDocument(rollId0)
+const newItem1 = await itemCompendium1.getDocument(rollId1)
+const newItem2 = await itemCompendium2.getDocument(rollId2)
+const newItem3 = await itemCompendium3.getDocument(rollId3)
+const newItem4 = await itemCompendium4.getDocument(rollId4)
+const newItem5 = await itemCompendium5.getDocument(rollId5)
+const newItem6 = await itemCompendium6.getDocument(rollId6)
+const newItem7 = await itemCompendium7.getDocument(rollId7)
+const newItem8 = await itemCompendium8.getDocument(rollId8)
+const newItem9 = await itemCompendium9.getDocument(rollId9)
+
+let currentItem0 = undefined; if(userItems.index.find(ent=>ent.name === newItemName0)){currentItem0 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName0)._id))}
+if(currentItem0 == undefined){await Item.createDocuments([newItem0.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem0.update({"data.quantity": currentItem0.data.data.quantity + 1})};
+let currentItem1 = undefined; if(userItems.index.find(ent=>ent.name === newItemName1)){currentItem1 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName1)._id))}
+if(currentItem1 == undefined){await Item.createDocuments([newItem1.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem1.update({"data.quantity": currentItem1.data.data.quantity + 1})};
+let currentItem2 = undefined; if(userItems.index.find(ent=>ent.name === newItemName2)){currentItem2 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName2)._id))}
+if(currentItem2 == undefined){await Item.createDocuments([newItem2.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem2.update({"data.quantity": currentItem2.data.data.quantity + 1})};
+let currentItem3 = undefined; if(userItems.index.find(ent=>ent.name === newItemName3)){currentItem3 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName3)._id))}
+if(currentItem3 == undefined){await Item.createDocuments([newItem3.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem3.update({"data.quantity": currentItem3.data.data.quantity + 1})};
+let currentItem4 = undefined; if(userItems.index.find(ent=>ent.name === newItemName4)){currentItem4 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName4)._id))}
+if(currentItem4 == undefined){await Item.createDocuments([newItem4.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem4.update({"data.quantity": currentItem4.data.data.quantity + 1})};
+let currentItem5 = undefined; if(userItems.index.find(ent=>ent.name === newItemName5)){currentItem5 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName5)._id))}
+if(currentItem5 == undefined){await Item.createDocuments([newItem5.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem5.update({"data.quantity": currentItem5.data.data.quantity + 1})};
+let currentItem6 = undefined; if(userItems.index.find(ent=>ent.name === newItemName6)){currentItem6 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName6)._id))}
+if(currentItem6 == undefined){await Item.createDocuments([newItem6.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem6.update({"data.quantity": currentItem6.data.data.quantity + 1})};
+let currentItem7 = undefined; if(userItems.index.find(ent=>ent.name === newItemName7)){currentItem7 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName7)._id))}
+if(currentItem7 == undefined){await Item.createDocuments([newItem7.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem7.update({"data.quantity": currentItem7.data.data.quantity + 1})};
+let currentItem8 = undefined; if(userItems.index.find(ent=>ent.name === newItemName8)){currentItem8 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName8)._id))}
+if(currentItem8 == undefined){await Item.createDocuments([newItem8.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem8.update({"data.quantity": currentItem8.data.data.quantity + 1})};
+let currentItem9 = undefined; if(userItems.index.find(ent=>ent.name === newItemName9)){currentItem9 = (await userItems.getDocument(userItems.index.find(ent=>ent.name === newItemName9)._id))}
+if(currentItem9 == undefined){await Item.createDocuments([newItem9.toObject()], {pack: userItems.metadata.package + "." + userItems.metadata.name})} else {await currentItem9.update({"data.quantity": currentItem9.data.data.quantity + 1})};
+
+const dateAndTime = new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"}) + " pacific";
+let recordCompendium = game.packs.find(p=>p.metadata.label === "Info: BnG " + spirit.name)
+let record = (await recordCompendium.getDocument(recordCompendium.index.find(ent=>ent.name == "Finding Record " + spirit.name)._id))
+let message = `
+<p style="text-align: center"><b>${spirit.name}</b> found 10 runes</p>
+<table style="width: 100%;" border="1">
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage0} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName0}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage1} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName1}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage2} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName2}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage3} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName3}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage4} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName4}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage5} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName5}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage6} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName6}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage7} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName7}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage8} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName8}</td>
+</tr>
+<tr>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="20"/></td>
+    <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+    <td style="width: 9%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${newItemImage9} width="20"/></td>
+    <td style="width: 81%; text-align: left; vertical-align: middle; border-style: hidden; font-size: 12px;">${newItemName9}</td>
+</tr>
+</table>
+`
+record.update({content:`
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName9}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName8}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName7}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName6}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName5}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName4}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName3}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName2}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName1}]</p>
+<p>[${dateAndTime}] - - - [${usedItem.name}] > > > [${newItemName0}]</p>
+` + record.data.content})
+await new Promise(r => setTimeout(r, 500));
+ChatMessage.create({speaker: {alias: "Finding Circle"}, content: message})
