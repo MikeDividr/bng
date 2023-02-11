@@ -1,0 +1,947 @@
+const infoSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_prompt.mp3", volume: 0.5}, false);
+const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use this circle.'); return;} 
+let spirit = game.actors.find(a=>a.id === args[0]);
+if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+
+const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "binding-click")
+let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); return}
+
+const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + spirit.name)
+const vessel = (await userActors.getDocument(args[1]))
+
+const category = args[2]
+
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+const item = (await userItems.getDocument(args[3]))
+
+if(item.type == "equipment"){
+    if(item.data.data.armor?.type == "light" || item.data.data.armor?.type == "medium" || item.data.data.armor?.type == "heavy" || item.data.data.armor?.type == "natural"){
+        if(vessel.items.find(i => i.data.data.armor?.type == "light" || i.data.data.armor?.type == "medium" || i.data.data.armor?.type == "heavy" || i.data.data.armor?.type == "natural")){
+            await new Promise(r => setTimeout(r, 500));
+            await infoSound();
+            await ui.notifications.info("WARNING: You are about to bind armor to a vessel that already has armor");
+            await new Promise(r => setTimeout(r, 500));
+        }
+    }
+}
+
+const martialProf = Boolean(vessel.data.data.traits.weaponProf.value.find(i=>
+    [i] == "mar" || [i] == "battleaxe" || [i] == "blowgun" || [i] == "flail" || [i] == "glaive" || 
+    [i] == "greataxe" || [i] == "greatsword" || [i] == "halberd" || [i] == "handcrossbow" || [i] == "heavycrossbow" || 
+    [i] == "lance" || [i] == "longbow" || [i] == "longsword" || [i] == "maul" || [i] == "morningstar" || 
+    [i] == "net" || [i] == "pike" || [i] == "rapier" || [i] == "scimitar" || [i] == "shortsword" || 
+    [i] == "trident" || [i] == "warpick" || [i] == "warhammer" || [i] == "whip"
+))
+const preReqs = [
+    {
+        name: "Mote (Ahl): Grappler",
+        text: "Strength 13 or higher",
+        check: Boolean(vessel.data.data.abilities.str.value >= 13)
+    }, 
+    {
+        name: "Mote (Ahl): Heavily Armored",
+        text: "Proficiency with medium armor",
+        check: Boolean(vessel.data.data.traits.armorProf.value.find(i=>[i] == "med"))
+    }, 
+    {
+        name: "Mote (Ahl): Moderately Armored",
+        text: "Proficiency with light armor",
+        check: Boolean(vessel.data.data.traits.armorProf.value.find(i=>[i] == "lgt"))
+    }, 
+    {
+        name: "Mote (Ahl): More Features (Barbarian)",
+        text: "1st level Barbarian",
+        check: Boolean(vessel.classes.barbarian?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Ahl): More Features (Rogue)",
+        text: "1st level Rogue",
+        check: Boolean(vessel.classes.rogue?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Ahl): Squat Nimbleness",
+        text: "Dwarf or a Small race",
+        check: Boolean(vessel.data.data.details.race.includes("Dwarf") || vessel.data.data.traits.size == "sm")
+    }, 
+    {
+        name: "Mote (Bel): Dragon Hide",
+        text: "Dragonborn",
+        check: Boolean(vessel.data.data.details.race.includes("Dragonborn"))
+    }, 
+    {
+        name: "Mote (Bel): Dwarven Fortitude",
+        text: "Dwarf",
+        check: Boolean(vessel.data.data.details.race.includes("Dwarf"))
+    }, 
+    {
+        name: "Mote (Bel): Elemental Adept",
+        text: "The ability to cast at least one spell",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic" || itm.name == "Mote (Bel): Artificer Initiate" || itm.name == "Mote (Kal): Magic Initiate"))
+    }, 
+    {
+        name: "Mote (Bel): Fighting Initiate",
+        text: "Proficiency with a martial weapon",
+        check: martialProf
+    }, 
+    {
+        name: "Mote (Bel): Metamagic Adept",
+        text: "Spellcasting or Pact Magic feature",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Mote (Bel): More Features (Fighter)",
+        text: "1st level Fighter",
+        check: Boolean(vessel.classes.fighter?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Bel): More Features (Monk)",
+        text: "1st level Monk",
+        check: Boolean(vessel.classes.monk?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Bel): Skulker",
+        text: "Dexterity 13 or higher",
+        check: Boolean(vessel.data.data.abilities.dex.value >= 13)
+    }, 
+    {
+        name: "Mote (Bel): Spell Sniper",
+        text: "The ability to cast at least one spell",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic" || itm.name == "Mote (Bel): Artificer Initiate" || itm.name == "Mote (Kal): Magic Initiate"))
+    }, 
+    {
+        name: "Mote (Bel): Wood Elf Magic",
+        text: "Elf (wood)",
+        check: Boolean(vessel.data.data.details.race.includes("Elf (Wood)"))
+    }, 
+    {
+        name: "Mote (Kal): Defensive Duelist",
+        text: "Dexterity 13 or higher",
+        check: Boolean(vessel.data.data.abilities.dex.value >= 13)
+    }, 
+    {
+        name: "Mote (Kal): Dragon Fear",
+        text: "Dragonborn",
+        check: Boolean(vessel.data.data.details.race.includes("Dragonborn"))
+    }, 
+    {
+        name: "Mote (Kal): Drow High Magic",
+        text: "Elf (drow)",
+        check: Boolean(vessel.data.data.details.race.includes("Elf (Drow)"))
+    }, 
+    {
+        name: "Mote (Kal): Fade Away",
+        text: "Gnome",
+        check: Boolean(vessel.data.data.details.race.includes("Gnome"))
+    }, 
+    {
+        name: "Mote (Kal): Fey Teleportation",
+        text: "Elf (high)",
+        check: Boolean(vessel.data.data.details.race.includes("Elf (High)"))
+    }, 
+    {
+        name: "Mote (Kal): Flames of Phlegethos",
+        text: "Tiefling",
+        check: Boolean(vessel.data.data.details.race.includes("Tiefling"))
+    }, 
+    {
+        name: "Mote (Kal): Infernal Constitution",
+        text: "Tiefling",
+        check: Boolean(vessel.data.data.details.race.includes("Tiefling"))
+    }, 
+    {
+        name: "Mote (Kal): More Features (Paladin)",
+        text: "1st level Paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Kal): More Features (Ranger)",
+        text: "1st level Ranger",
+        check: Boolean(vessel.classes.ranger?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Kal): Orcish Fury",
+        text: "Half-Orc",
+        check: Boolean(vessel.data.data.details.race.includes("Half-Orc"))
+    }, 
+    {
+        name: "Mote (Kal): Revenant Blade",
+        text: "Elf",
+        check: Boolean(vessel.data.data.details.race.includes("Elf"))
+    }, 
+    {
+        name: "Mote (Kal): Ritual Caster",
+        text: "Intelligence or Wisdom 13 or higher",
+        check: Boolean(vessel.data.data.abilities.int.value >= 13 || vessel.data.data.abilities.wis.value >= 13)
+    }, 
+    {
+        name: "Mote (Kal): Second Chance",
+        text: "Halfling",
+        check: Boolean(vessel.data.data.details.race.includes("Halfling"))
+    }, 
+    {
+        name: "Mote (Kal): Svirfneblin Magic",
+        text: "Gnome (deep)",
+        check: Boolean(vessel.data.data.details.race.includes("Gnome (Deep)"))
+    }, 
+    {
+        name: "Mote (Rul): Bountiful Luck",
+        text: "Halfling",
+        check: Boolean(vessel.data.data.details.race.includes("Halfling"))
+    }, 
+    {
+        name: "Mote (Rul): Eldritch Adept",
+        text: "Spellcasting or Pact Magic feature",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Mote (Rul): Heavy Armor Master",
+        text: "Proficiency with heavy armor",
+        check: Boolean(vessel.data.data.traits.armorProf.value.find(i=>[i] == "hvy"))
+    }, 
+    {
+        name: "Mote (Rul): Inspiring Leader",
+        text: "Charisma 13 or higher",
+        check: Boolean(vessel.data.data.abilities.cha.value >= 13)
+    }, 
+    {
+        name: "Mote (Rul): Medium Armor Master",
+        text: "Proficiency with medium armor",
+        check: Boolean(vessel.data.data.traits.armorProf.value.find(i=>[i] == "med"))
+    }, 
+    {
+        name: "Mote (Rul): More Features (Bard)",
+        text: "1st level Bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Features (Sorcerer)",
+        text: "1st level Sorcerer",
+        check: Boolean(vessel.classes.sorcerer?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Features (Warlock)",
+        text: "1st level Warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Paladin)",
+        text: "2nd level Paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 2)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Ranger)",
+        text: "2nd level Ranger",
+        check: Boolean(vessel.classes.ranger?.data.data.levels >= 2)
+    }, 
+    {
+        name: "Mote (Sol): Elven Accuracy",
+        text: "Elf or half-elf",
+        check: Boolean(vessel.data.data.details.race.includes("Elf") || vessel.data.data.details.race.includes("Half-Elf"))
+    }, 
+    {
+        name: "Mote (Sol): More Features (Cleric)",
+        text: "1st level Cleric",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Sol): More Features (Druid)",
+        text: "1st level Druid",
+        check: Boolean(vessel.classes.druid?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Sol): More Features (Wizard)",
+        text: "1st level Wizard",
+        check: Boolean(vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Artificer)",
+        text: "1st level Artificer",
+        check: Boolean(vessel.classes.artificer?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Bard)",
+        text: "1st level Bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Cleric)",
+        text: "1st level Cleric",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Druid)",
+        text: "1st level Druid",
+        check: Boolean(vessel.classes.druid?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Sorcerer)",
+        text: "1st level Sorcerer",
+        check: Boolean(vessel.classes.sorcerer?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Warlock)",
+        text: "1st level Warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Rul): More Spells (Wizard)",
+        text: "1st level Wizard",
+        check: Boolean(vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Mote (Sol): Prodigy",
+        text: "Half-Elf, half-orc, or human",
+        check: Boolean(vessel.data.data.details.race.includes("Half-Elf") || vessel.data.data.details.race.includes("Half-Orc") || vessel.data.data.details.race.includes("Human"))
+    }, 
+    {
+        name: "Mote (Sol): War Caster",
+        text: "The ability to cast at least one spell",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic" || itm.name == "Mote (Bel): Artificer Initiate" || itm.name == "Mote (Kal): Magic Initiate"))
+    }, 
+    {
+        name: "Relic (Ahl): Dark Shard Amulet",
+        text: "requires attunement by a warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Ahl): Hat of Wizardry",
+        text: "requires attunement by a wizard",
+        check: Boolean(vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Ahl): Ruby of the War Mage",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Bel): +1 Rod of the Pact Keeper",
+        text: "requires attunement by a warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Bel): +1 Wand of the War Mage",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Bel): Instrument of the Bards (Doss Lute)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Bel): Instrument of the Bards (Fochlucan Bandore)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Bel): Instrument of the Bards (Mac-Fuirmidh Cittern)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Bel): Pearl of Power",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Bel): Staff of the Adder",
+        text: "requires attunement by a cleric, druid, or warlock",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Bel): Wand of Web",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Kal): +2 Rod of the Pact Keeper",
+        text: "requires attunement by a warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): +2 Wand of the War Mage",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Kal): Horn of Valhalla (Brass)",
+        text: "proficient with all simple weapons",
+        check: Boolean(vessel.data.data.traits.weaponProf.value.find(i=>[i] == "sim"))
+    }, 
+    {
+        name: "Relic (Kal): Instrument of the Bards (Canaith Mandolin)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Instrument of the Bards (Cli Lyre)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Necklace of Prayer Beads",
+        text: "requires attunement by a cleric, druid, or paladin",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Staff of Charming",
+        text: "requires attunement by a bard, cleric, druid, sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1 || vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Staff of Healing",
+        text: "requires attunement by a bard, cleric, or druid",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1 || vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Staff of Swarming Insects",
+        text: "requires attunement by a bard, cleric, druid, sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1 || vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Staff of the Woodlands",
+        text: "requires attunement by a druid",
+        check: Boolean(vessel.classes.druid?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Staff of Withering",
+        text: "requires attunement by a cleric, druid, or warlock",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Kal): Wand of Binding",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Kal): Wand of Fireballs",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Kal): Wand of Lightning Bolts",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Rul): +3 Rod of the Pact Keeper",
+        text: "requires attunement by a warlock",
+        check: Boolean(vessel.classes.warlock?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Rul): +3 Wand of the War Mage",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (CE)",
+        text: "alignment: Chaotic Evil",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Evil")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (CG)",
+        text: "alignment: Chaotic Good",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Good")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (CN)",
+        text: "alignment: Chaotic Neutral",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Neutral")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (LE)",
+        text: "alignment: Lawful Evil",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Evil")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (LG)",
+        text: "alignment: Lawful Good",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Good")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (LN)",
+        text: "alignment: Lawful Neutral",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Neutral")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (N)",
+        text: "alignment: Neutral",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (NE)",
+        text: "alignment: Neutral Evil",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral Evil")
+    }, 
+    {
+        name: "Relic (Rul): Candle of Invocation (NG)",
+        text: "alignment: Neutral Good",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral Good")
+    }, 
+    {
+        name: "Relic (Rul): Dwarven Thrower",
+        text: "requires attunement by a dwarf",
+        check: Boolean(vessel.data.data.details.race.includes("Dwarf"))
+    }, 
+    {
+        name: "Relic (Rul): Horn of Valhalla (Bronze)",
+        text: "proficiency with all medium armor",
+        check: Boolean(vessel.data.data.traits.armorProf.value.find(i=>[i] == "med"))
+    }, 
+    {
+        name: "Relic (Rul): Instrument of the Bards (Anstruth Harp)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Rul): Staff of Fire",
+        text: "requires attunement by a druid, sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Rul): Staff of Frost",
+        text: "requires attunement by a druid, sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Rul): Staff of Power",
+        text: "requires attunement by a sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Rul): Wand of Polymorph",
+        text: "requires attunement by a spellcaster",
+        check: Boolean(vessel.data.items.find(itm=>itm.name == "Spellcasting" || itm.name == "Pact Magic"))
+    }, 
+    {
+        name: "Relic (Sol): Blackrazor",
+        text: "requires attunement by a creature of non-lawful alignment",
+        check: Boolean(!vessel.data.data.details.alignment.includes("Lawful"))
+    }, 
+    {
+        name: "Relic (Sol): Holy Avenger Greatsword",
+        text: "requires attunement by a paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Holy Avenger Longsword",
+        text: "requires attunement by a paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Holy Avenger Rapier",
+        text: "requires attunement by a paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Holy Avenger Scimitar",
+        text: "requires attunement by a paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Holy Avenger Shortsword",
+        text: "requires attunement by a paladin",
+        check: Boolean(vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Horn of Valhalla (Iron)",
+        text: "proficiency with all martial weapons",
+        check: Boolean(vessel.data.data.traits.weaponProf.value.find(i=>[i] == "mar"))
+    }, 
+    {
+        name: "Relic (Sol): Instrument of the Bards (Ollamh Harp)",
+        text: "requires attunement by a bard",
+        check: Boolean(vessel.classes.bard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Moonblade",
+        text: "requires attunement by an elf or half-elf of neutral good alignment",
+        check: Boolean(vessel.data.data.details.alignment.includes("Neutral Good") && Boolean(vessel.data.data.details.race.includes("Elf") || vessel.data.data.details.race.includes("Half-Elf")))
+    }, 
+    {
+        name: "Relic (Sol): Robe of the Archmagi (Black)",
+        text: "requires attunement by an Evil sorcerer, an Evil warlock, or an Evil wizard",
+        check: Boolean(vessel.data.data.details.alignment.includes("Evil") && Boolean(vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1))
+    }, 
+    {
+        name: "Relic (Sol): Robe of the Archmagi (Gray)",
+        text: "requires attunement by a Neutral sorcerer, a Neutral warlock, or a Neutral wizard",
+        check: Boolean(Boolean(vessel.data.data.details.alignment == "Lawful Neutral" || vessel.data.data.details.alignment == "Neutral" || vessel.data.data.details.alignment == "Chaotic Neutral") && Boolean(vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1))
+    }, 
+    {
+        name: "Relic (Sol): Robe of the Archmagi (White)",
+        text: "requires attunement by a Good sorcerer, a Good warlock, or a Good wizard",
+        check: Boolean(vessel.data.data.details.alignment.includes("Good") && Boolean(vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1))
+    }, 
+    {
+        name: "Relic (Sol): Rod of Resurrection",
+        text: "requires attunement by a cleric, druid, or paladin",
+        check: Boolean(vessel.classes.cleric?.data.data.levels >= 1 || vessel.classes.druid?.data.data.levels >= 1 || vessel.classes.paladin?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Staff of the Magi",
+        text: "requires attunement by a sorcerer, warlock, or wizard",
+        check: Boolean(vessel.classes.sorcerer?.data.data.levels >= 1 || vessel.classes.warlock?.data.data.levels >= 1 || vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Answerer)",
+        text: "requires attunement by a chaotic good creature",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Good")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Back Talker)",
+        text: "requires attunement by a chaotic evil creature",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Evil")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Concluder)",
+        text: "requires attunement by a lawful neutral creature",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Neutral")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Last Quip)",
+        text: "requires attunement by a chaotic neutral creature",
+        check: Boolean(vessel.data.data.details.alignment == "Chaotic Neutral")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Rebutter)",
+        text: "requires attunement by a neutral good creature",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral Good")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Replier)",
+        text: "requires attunement by a neutral creature",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Retorter)",
+        text: "requires attunement by a lawful good creature",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Good")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Scather)",
+        text: "requires attunement by a lawful evil creature",
+        check: Boolean(vessel.data.data.details.alignment == "Lawful Evil")
+    }, 
+    {
+        name: "Relic (Sol): Sword of Answering (Squelcher)",
+        text: "requires attunement by a neutral evil creature",
+        check: Boolean(vessel.data.data.details.alignment == "Neutral Evil")
+    }, 
+    {
+        name: "Relic (Sol): Talisman of Pure Good",
+        text: "requires attunement by a creature of good alignment",
+        check: Boolean(vessel.data.data.details.alignment.includes("Good"))
+    }, 
+    {
+        name: "Relic (Sol): Talisman of Ultimate Evil",
+        text: "requires attunement by a creature of evil alignment",
+        check: Boolean(vessel.data.data.details.alignment.includes("Evil"))
+    }, 
+    {
+        name: "Relic (Sol): Tome of the Stilled Tongue",
+        text: "requires attunement by a wizard",
+        check: Boolean(vessel.classes.wizard?.data.data.levels >= 1)
+    }, 
+    {
+        name: "Relic (Whelm): Whelm",
+        text: "requires attunement by a dwarf",
+        check: Boolean(vessel.data.data.details.race.includes("Dwarf"))
+    }, 
+]
+
+
+let moteValue = vessel.data.data.resources.primary.value;
+let moteMax = vessel.data.data.resources.primary.max;
+let relicValue = vessel.data.data.resources.secondary.value;
+let relicMax = vessel.data.data.resources.secondary.max;
+
+if(vessel.data.data.resources.primary.value == null)    {moteValue = 0}   else {moteValue = vessel.data.data.resources.primary.value}
+if(vessel.data.data.resources.primary.max == null)      {moteMax = 0}     else {moteMax = vessel.data.data.resources.primary.max}
+if(vessel.data.data.resources.secondary.value == null)  {relicValue = 0}  else {relicValue = vessel.data.data.resources.secondary.value}
+if(vessel.data.data.resources.secondary.max == null)    {relicMax = 0}    else {relicMax = vessel.data.data.resources.secondary.max}
+
+let originalQuantity = item.data.data.quantity
+
+let attuned = ""; let attunements = ""; 
+if(item.data.data.attunement > 0){
+    attuned = '<i class="fas fa-sun"></i>'
+    attunements = `
+    <div class="vessel__attunement">
+        <div class="vessel__attunement__background">
+            <div style="display: flex; align-items: center;">
+                <i style="font-size: 2em;" class="fas fa-sun"></i>:
+                <p style="font-size: 24px; padding-left: 5px;">${vessel.data.data.attributes.attunement.value}/${vessel.data.data.attributes.attunement.max}</p>
+            </div>
+        </div>
+    </div>
+    `
+}
+
+let vesselSlots = ""; let itemSlots = ""; let itemMoteSlots = 0; let itemRelicSlots = 0;
+let itemMoteEffect = item.data.effects.find(e=>e.data.label.includes("[Motes:"))
+if(itemMoteEffect){
+    vesselSlots = `
+    <div style="display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 16px; padding-right: 5px;">Mote Slots:</p>
+    <p style="font-size: 20px; padding-left: 5px;">${moteValue}/${moteMax}</p>
+    </div>
+    `
+    itemMoteSlots = parseInt(itemMoteEffect.data.changes.find(c=>c.key == "data.resources.primary.value").value)
+    itemSlots = `
+    <div style="display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 16px; padding-right: 5px;">Mote Slots:</p>
+    <p style="font-size: 20px; padding-left: 5px;">${itemMoteSlots}</p>
+    </div>
+    `
+}
+let itemRelicEffect = item.data.effects.find(e=>e.data.label.includes("Relic Slots"))
+if(itemRelicEffect){
+    vesselSlots = `
+    <div style="display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 16px; padding-right: 5px;">Relic Slots:</p>
+    <p style="font-size: 20px; padding-left: 5px;">${relicValue}/${relicMax}</p>
+    </div>
+    `
+    itemRelicSlots = parseInt(itemRelicEffect.data.changes.find(c=>c.key == "data.resources.secondary.value").value)
+    itemSlots = `
+    <div style="display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 16px; padding-right: 5px;">Relic Slots:</p>
+    <p style="font-size: 20px; padding-left: 5px;">${itemRelicSlots}</p>
+    </div>
+    `
+}
+
+let proficientLabel = ""
+let notProficientLabel = `<font color="red"><em>(Not Proficient)</em></font> `
+if(item.data.data.weaponType?.includes("simple") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "sim")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+if(item.data.data.weaponType?.includes("martial") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "mar")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+if(item.data.data.armor?.type == "light" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "lgt")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+if(item.data.data.armor?.type == "medium" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "med")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+if(item.data.data.armor?.type == "heavy" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "hvy")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+if(item.data.data.armor?.type == "shield" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "shl")){
+    proficientLabel = notProficientLabel
+    if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficientLabel = ""}
+}
+
+let rarityColor = ""
+if(item.data.data.rarity == "uncommon"){rarityColor = "#00ff00"}
+if(item.data.data.rarity == "rare"){rarityColor = "#0000ff"}
+if(item.data.data.rarity == "veryRare"){rarityColor = "#ff00ff"}
+if(item.data.data.rarity == "legendary"){rarityColor = "#ffd700"}
+
+let weight = item.data.data.weight; let weightAmount = 1
+if (item.data.type === "loot" || item.data.name.includes("Dart")){weight = item.data.data.weight * originalQuantity; weightAmount = originalQuantity;
+} else if (item.data.type === "consumable"){
+    if (item.data.data.consumableType == "food" || 
+        item.data.data.consumableType == "ammo" || 
+        item.data.data.consumableType == "trinket"){weight = item.data.data.weight * originalQuantity; weightAmount = originalQuantity;
+    }
+}
+
+const confirmDialog = new Dialog({
+    title: "Binding Circle",
+    content: `
+    <style>
+    .image {position: relative; margin-left: auto; margin-right: auto; width: 150px;}
+    .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 80px;}
+    .image__img {display: block; width: 100%;}
+    .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+    .image__overlay--blur {backdrop-filter: blur(5px);}
+    .image__overlay--primary {background: #e57509;}
+    .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+    .image__overlay:hover {opacity: 0.8;}
+    .image__overlay:hover > * {transform: translateY(0);}
+    .image__title {font-weight: bold; text-align: center;}
+    .image__description {font-size: 1em; margin-top: 0.25em;}
+    .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+    .image__count {font-size: 3em;font-weight: bold;}
+    .image__attunement {position: absolute;top: 50px;left: 50px;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #aa0000;font-family: 'Quicksand', sans-serif; font-size: 2em;}
+    .vessel__attunement {position: absolute;top: 45px;left: 0px;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+    .vessel__attunement__background {position: absolute;top: 0;left: 0;width: 100%;height: 40%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;}
+    .progress {
+        position: relative;
+        width: 100%;
+        height: 20px;
+        background: #aaaaaa;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress__text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateY(-50%) translateX(-50%);
+        font: bold 18px "Quicksand", sans-serif;
+        color: #ffffff;
+    }
+    </style>
+    <table style="width: 100%;" border="1">
+    <tr>
+        <td colspan="3" style="width: 100%; text-align: center; vertical-align: middle; border-style: hidden;">
+            <div style="display: flex; align-items: center; justify-content: center;">
+                <p style="font-size: 16px; padding-right: 5px;">${vessel.name} will gain</p>
+                <img src="icons/tools/smithing/anvil.webp" width="20"/>
+                <p style="font-size: 20px; color: #777777; padding-left: 5px;"><b>+ ${weight} lbs</b></p>
+                <p style="font-size: 16px; padding-left: 5px;">for ${weightAmount} of this item</p>
+            </div>
+            <div class="progress">
+                <div style="width: ${((vessel.data.data.attributes.encumbrance.value + weight) / vessel.data.data.attributes.encumbrance.max) * 100}%; height: 100%; background: #777777;">
+                <div style="width: ${((vessel.data.data.attributes.encumbrance.value) / (vessel.data.data.attributes.encumbrance.value + weight)) * 100}%; height: 100%; background: #333333;">
+                </div>
+                </div>
+                <span class="progress__text">${vessel.data.data.attributes.encumbrance.value + weight} / ${vessel.data.data.attributes.encumbrance.max}</span>
+                <span style="position: absolute; top: 50%; left: 33.33%; transform: translateY(-50%); font: bold 18px "Quicksand", sans-serif; color: #ffffff;">|</span>
+                <span style="position: absolute; top: 50%; left: 66.66%; transform: translateY(-50%); font: bold 18px "Quicksand", sans-serif; color: #ffffff;">|</span>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 30%; border-style: hidden; text-align: center; vertical-align: middle;">
+        <p style="text-align: center; vertical-align: middle;">${vessel.name}</p>
+            <div class="imageSmall">
+            <img class="image__img" src=${vessel.img}>
+            ${attunements}
+            <div class="image__overlay image__overlay--primary" id="inspectVessel"><div class="image__title" style="font-size: 1em;">Inspect</div>
+            </div>
+            </div>
+            ${vesselSlots}
+        </td>
+        <td style="width: 40%; border-style: hidden; text-align: center; vertical-align: middle;">
+            <div class="image">
+            <img class="image__img" src="icons/skills/melee/weapons-crossed-swords-black-gray.webp">
+            <div class="image__overlay image__overlay--primary" id="bind"><div class="image__title" style="font-size: 2.5em;">Bind</div>
+            </div>
+        </td>
+        <td style="width: 30%; border-style: hidden; vertical-align: middle;">
+        <p style="text-align: center; vertical-align: middle; color: ${rarityColor};">${item.name}</p>
+        <p style="text-align: center; vertical-align: middle;">${proficientLabel}</p>
+            <div class="imageSmall">
+            <img class="image__img" src=${item.img}>
+            <div class="image__counter"><div class="image__count">${originalQuantity}</div></div>
+            <div class="image__attunement">${attuned}</div>
+            <div class="image__overlay image__overlay--primary" id="inspectItem"><div class="image__title" style="font-size: 1em;">Inspect</div>
+            </div>
+            </div>
+            ${itemSlots}
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 30%; text-align: center; vertical-align: middle; border-style: hidden;"></td>
+        <td style="width: 40%; text-align: center; vertical-align: middle; border-style: hidden;"><input type="number" id="amount" value="1"></td>
+        <td style="width: 30%; text-align: center; vertical-align: middle; border-style: hidden;"></td>
+    </tr>
+    </table>
+    <p style="text-align: center;"><em>Note: Binding these items is free but <b>Unbinding</b> will cost <b>${Math.ceil(item.data.data.price * 350).toLocaleString("en-US")}</b> skullcoin per item.</em></p>
+    `,
+    buttons: {
+        buttonBack: {
+            label: `Go Back`,
+            callback: async () => {
+                await item.sheet.close();
+                tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await confirmDialog.close(); return}
+                game.macros.find(m=>m.name==="Bind Items 03 (Choose Item)").execute(spirit.id, vessel.id, category);
+            }
+        }
+    },
+    render: (html) => {
+        html.find("#bind").click(async function () {
+            tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+            if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+            else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await confirmDialog.close(); return}
+
+            let amount = parseInt(html.find("#amount")[0].value);
+            if (amount == "" || amount <= 0){erSound(); ui.notifications.warn(`You must enter an amount greater than 0`);} 
+            else if (amount > originalQuantity){erSound(); ui.notifications.warn(`The amount entered exceeds the available amount.`);} 
+            else if ((item.data.data.weight * amount) + vessel.data.data.attributes.encumbrance.value > vessel.data.data.attributes.encumbrance.max){erSound(); ui.notifications.warn(`The amount entered exceeds ${vessel.name}'s encumbrance limit: (${amount} * ${item.data.data.weight} = <b>${amount * item.data.data.weight}</b> encumbrance)`)}
+            else {checkPreReqs()}
+
+            function checkPreReqs(){
+                if(preReqs.find(i=>i.name == item.name)){
+                    let pre = preReqs.find(i=>i.name == item.name)
+                    if(pre.check == false){erSound(); ui.notifications.warn(`${vessel.name} doesn't meet this item's prerequisites: <b>${pre.text}</b>`)}
+                    else {checkAttune()}
+                } else {checkAttune()}
+            }
+
+            function checkAttune(){
+                if (item.data.data.attunement > 0){
+                    if (vessel.items.find(i => i.data.name == item.name)){erSound(); ui.notifications.warn(`You already have one of these attunement items bound to ${vessel.name}`)}
+                    else if (amount > 1){erSound(); ui.notifications.warn(`You can only bind 1 of these attunement items`)}
+                    else if (vessel.data.data.attributes.attunement.value + amount > vessel.data.data.attributes.attunement.max){erSound(); ui.notifications.warn(`The amount entered exceeds ${vessel.name}'s attunement limit: (${amount} + ${vessel.data.data.attributes.attunement.value} = <b>${amount + vessel.data.data.attributes.attunement.value}</b> attunement items)`)}
+                    else {checkSlots()}
+                } else {checkSlots()}
+            }
+
+            function checkSlots(){
+                if (itemMoteEffect){
+
+                    if(item.name !== "Mote (Bel): Elemental Adept" && item.name !== "Mote (Rul): Resilient"){
+                        if (vessel.items.find(i => i.data.name == item.name)){erSound(); ui.notifications.warn(`You already have one of these motes bound to ${vessel.name}`)}
+                        else {theRest()}
+                    } else {theRest()}
+
+                    function theRest(){
+                        if (amount > 1){erSound(); ui.notifications.warn(`You can only bind 1 of these motes`)}
+                        else if ((itemMoteSlots * amount) + moteValue > moteMax){erSound(); ui.notifications.warn(`The amount entered exceeds ${vessel.name}'s mote slot limit: (${amount} * ${itemMoteSlots} = <b>${amount * itemMoteSlots}</b> mote slots)`);} 
+                        else {fire()}} 
+                    }
+
+                else if (itemRelicEffect){
+                    if (item.data.type === "loot" || item.data.name.includes("Dart")){multiple()} 
+                    else if (item.data.type === "consumable"){
+                        if (item.data.data.consumableType == "food" || 
+                            item.data.data.consumableType == "ammo" || 
+                            item.data.data.consumableType == "trinket"){multiple()} 
+                        else {single()}} 
+                    else {single()}
+                    function multiple(){
+                        if (itemRelicSlots + relicValue > relicMax){erSound(); ui.notifications.warn(`You don't have enough relic slots to bind this item)`);} 
+                        else {fire()} 
+                    }
+                    function single(){
+                        if ((itemRelicSlots * amount) + relicValue > relicMax){erSound(); ui.notifications.warn(`The amount entered exceeds ${vessel.name}'s relic slot limit: (${amount} * ${itemRelicSlots} = <b>${amount * itemRelicSlots}</b> relic slots)`);} 
+                        else {fire()} 
+                    }
+                } else {fire()}
+            }
+
+            async function fire(){
+                await item.sheet.close();
+                await confirmDialog.close()
+                game.macros.find(m=>m.name === "Bind Items 05 (GM)").execute(spirit.id, vessel.id, item.id, originalQuantity, amount);
+                await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_spell_mem.mp3", volume: 0.5}, false);
+                ui.notifications.info("Binding successful")
+                await new Promise(r => setTimeout(r, 1000));
+                vessel.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$(`#actor-${vessel.id}`).find(`a[data-tab='inventory']`)[0].click())
+                game.macros.find(m=>m.name==="Bind Items 03 (Choose Item)").execute(spirit.id, vessel.id, category);
+            }
+        }),
+        html.find("#inspectItem").click(async function () {
+            item.sheet._render(true, {top: 610, left: 610, width: 680, height: 500}).then(a=>$(`#item-${item.id}`).find(`a[data-tab='description']`)[0].click())
+        })
+        html.find("#inspectVessel").click(async function () {
+            vessel.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$(`#actor-${vessel.id}`).find(`a[data-tab='inventory']`)[0].click())
+        })
+    }
+}, {width: 600, height: 405, top: 0, left: 0}).render(true);
