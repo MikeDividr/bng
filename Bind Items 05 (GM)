@@ -1,0 +1,86 @@
+const spirit = game.actors.find(a=>a.id == args[0])
+const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + spirit.name)
+const vessel = (await userActors.getDocument(args[1]))
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+const item = (await userItems.getDocument(args[2]))
+
+let originalQuantity = args[3]
+let amount = args[4]
+
+let proficiency = true
+if(item.data.data.weaponType?.includes("simple") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "sim")){
+    proficiency = false; if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+if(item.data.data.weaponType?.includes("martial") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "mar")){
+    proficiency = false; if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+if(item.data.data.armor?.type == "light" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "lgt")){
+    proficiency = false; if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+if(item.data.data.armor?.type == "medium" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "med")){
+    proficiency = false;  if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+if(item.data.data.armor?.type == "heavy" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "hvy")){
+    proficiency = false; if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+if(item.data.data.armor?.type == "shield" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "shl")){
+    proficiency = false; if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == item.data.data.baseItem)){proficiency = true}
+}
+
+if (item.data.type === "loot" || item.data.name.includes("Dart")){multiple();
+} else if (item.data.type === "consumable"){
+    if (item.data.data.consumableType == "food" || 
+        item.data.data.consumableType == "ammo" || 
+        item.data.data.consumableType == "trinket"){multiple();
+    } else {single();}
+} else {single();}
+
+
+async function single(){
+    await item.update({"data.quantity": 1, "data.equipped": true, "data.proficient": proficiency});
+    if(item.data.data.attunement > 0){await item.update({"data.attunement": 2});}
+
+    for(i=0;i<amount;i++){await vessel.createEmbeddedDocuments("Item", [item.toObject()]);}
+
+    await item.update({"data.quantity": originalQuantity - amount});
+    if(item.data.data.quantity < 1){item.delete();};
+}
+
+async function multiple(){
+    await item.update({"data.quantity": amount, "data.equipped": true, "data.proficient": proficiency});
+    if(item.data.data.attunement > 0){await item.update({"data.attunement": 2});}
+
+    let currentItem = undefined 
+    if(vessel.items.find(i => i.data.name == item.name)){currentItem = vessel.items.find(i => i.data.name == item.name)}
+    if(currentItem == undefined){await vessel.createEmbeddedDocuments("Item", [item.toObject()])}
+    else {await currentItem.update({"data.quantity": parseInt(currentItem.data.data.quantity) + parseInt(amount)})}
+
+    await item.update({"data.quantity": originalQuantity - amount});
+    if(item.data.data.quantity < 1){item.delete();};
+}
+
+
+
+const dateAndTime = new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"}) + " pacific";
+const comp = game.packs.find(p=>p.metadata.label == "Info: BnG " + spirit.name)
+const record = (await comp.getDocument(comp.index.find(ent=>ent.name == "Binding Record " + spirit.name)._id))
+const message = `
+<p style="text-align: center"><b>${spirit.name}</b> bound an item</p>
+<table style="width: 100%;" border="1">
+<tr>
+<td style="width: 30%; border-style: hidden; text-align: center; vertical-align: middle; justify-constent: center;">
+    <p style="text-align: center; vertical-align: middle;">${vessel.name}</p>
+    <img src=${vessel.img} width="30">
+</td>
+<td style="width: 40%; border-style: hidden; text-align: center; vertical-align: middle;">
+    <img src="icons/skills/melee/weapons-crossed-swords-black-gray.webp" width="50">
+</td>
+<td style="width: 30%; border-style: hidden; text-align: center; vertical-align: middle; justify-constent: center;">
+    <p style="text-align: center; vertical-align: middle;">${item.name}</p>
+    <div style="display: flex; justify-content: center; align-items: center;"><img style="padding-right: 5px;" src=${item.img} width="30">(${amount})</div>
+</td>
+</tr>
+</table>
+`
+record.update({content:`<p>[${dateAndTime}] - - - bind [${item.name} * ${amount}] to [${vessel.name}]</p>` + record.data.content})
+ChatMessage.create({speaker: {alias: "Binding Circle"},content: message})
