@@ -1,0 +1,663 @@
+const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use this circle.'); return;} 
+let spirit = game.actors.find(a=>a.id === args[0]);
+if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+
+const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "binding-click")
+let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); return}
+
+const userActors = game.packs.find(p=>p.metadata.label === "Actors: BnG " + spirit.name)
+const vessel = (await userActors.getDocument(args[1]))
+
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+let inventoryFull = userItems.index.filter(ent=>
+    !ent.name.includes("Runefinder") && 
+    !ent.name.includes("Dawnrune") && 
+    !ent.name.includes("Motefinder") && 
+    !ent.name.includes("Relicfinder") && 
+    !ent.name.includes("Astral Gems") && 
+    !ent.name.includes("Skullcoin") && 
+    ent.type !== "background" && 
+    ent.type !== "class" && 
+    ent.type !== "subclass" && 
+    ent.type !== "feat" && 
+    ent.type !== "spell"
+)
+inventoryFull.sort(function(a, b) {
+    if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+    if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+    return 0;
+});
+
+const category = args[2]
+let inventoryCategory = []
+let header = {}
+
+if(category == "weapons"){
+    header = {name: "Weapons", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.name.includes("Arrow") || 
+            inv.name.includes("Crossbow Bolt") || 
+            inv.name.includes("Sling Bullet") || 
+            inv.name.includes("Blowgun Needle") || 
+            inv.name.includes("Club") || 
+            inv.name.includes("Dagger") || 
+            inv.name.includes("Greatclub") || 
+            inv.name.includes("Handaxe") || 
+            inv.name.includes("Javelin") || 
+            inv.name.includes("Light Hammer") || 
+            inv.name.includes("Mace") || 
+            inv.name.includes("Quarterstaff") || 
+            inv.name.includes("Sickle") || 
+            inv.name.includes("Spear") || 
+            inv.name.includes("Light Crossbow") || 
+            inv.name.includes("Dart") || 
+            inv.name.includes("Shortbow") || 
+            inv.name.includes("Sling") || 
+            inv.name.includes("Battleaxe") || 
+            inv.name.includes("Flail") || 
+            inv.name.includes("Glaive") || 
+            inv.name.includes("Greataxe") || 
+            inv.name.includes("Greatsword") || 
+            inv.name.includes("Halberd") || 
+            inv.name.includes("Lance") || 
+            inv.name.includes("Longsword") || 
+            inv.name.includes("Maul") || 
+            inv.name.includes("Morningstar") || 
+            inv.name.includes("Pike") || 
+            inv.name.includes("Rapier") || 
+            inv.name.includes("Scimitar") || 
+            inv.name.includes("Shortsword") || 
+            inv.name.includes("Trident") || 
+            inv.name.includes("War Pick") || 
+            inv.name.includes("Warhammer") || 
+            inv.name.includes("Whip") || 
+            inv.name.includes("Blowgun") || 
+            inv.name.includes("Hand Crossbow") || 
+            inv.name.includes("Heavy Crossbow") || 
+            inv.name.includes("Longbow") || 
+            inv.name.includes("Net")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+
+    if(inventoryCategory.find(itm=>itm.data.data.weaponType?.includes("simpleM"))){
+        await header.sections.push({name: "Melee (Simple)", items: []}); 
+        let simpleM = header.sections.find(sec=>sec.name == "Melee (Simple)")
+        for(inv of inventoryCategory){if(inv.data.data.weaponType?.includes("simpleM")){simpleM.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.weaponType?.includes("martialM"))){
+        await header.sections.push({name: "Melee (Martial)", items: []}); 
+        let martialM = header.sections.find(sec=>sec.name == "Melee (Martial)")
+        for(inv of inventoryCategory){if(inv.data.data.weaponType?.includes("martialM")){martialM.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.weaponType?.includes("simpleR"))){
+        await header.sections.push({name: "Ranged (Simple)", items: []}); 
+        let simpleR = header.sections.find(sec=>sec.name == "Ranged (Simple)")
+        for(inv of inventoryCategory){if(inv.data.data.weaponType?.includes("simpleR")){simpleR.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.weaponType?.includes("martialR"))){
+        await header.sections.push({name: "Ranged (Martial)", items: []}); 
+        let martialR = header.sections.find(sec=>sec.name == "Ranged (Martial)")
+        for(inv of inventoryCategory){if(inv.data.data.weaponType?.includes("martialR")){martialR.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.consumableType?.includes("ammo"))){
+        await header.sections.push({name: "Ammunition", items: []}); 
+        let ammo = header.sections.find(sec=>sec.name == "Ammunition")
+        for(inv of inventoryCategory){if(inv.data.data.consumableType?.includes("ammo")){ammo.items.push(inv)}}
+    }
+}
+
+if(category == "armor"){
+    header = {name: "Armor", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.name.includes("Padded Armor") || 
+            inv.name.includes("Leather Armor") || 
+            inv.name.includes("Studded Leather Armor") || 
+            inv.name.includes("Hide Armor") || 
+            inv.name.includes("Chain Shirt") || 
+            inv.name.includes("Scale Mail") || 
+            inv.name.includes("Spiked Armor") || 
+            inv.name.includes("Breastplate") || 
+            inv.name.includes("Half Plate Armor") || 
+            inv.name.includes("Ring Mail") || 
+            inv.name.includes("Chain Mail") || 
+            inv.name.includes("Splint Armor") || 
+            inv.name.includes("Plate Armor") || 
+            Boolean(inv.name.includes("Shield") && inv.type == "equipment")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+
+    if(inventoryCategory.find(itm=>itm.data.data.armor?.type.includes("shield"))){
+        await header.sections.push({name: "Shields", items: []}); 
+        let shield = header.sections.find(sec=>sec.name == "Shields")
+        for(inv of inventoryCategory){if(inv.data.data.armor?.type.includes("shield")){shield.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.armor?.type.includes("light"))){
+        await header.sections.push({name: "Light Armor", items: []}); 
+        let light = header.sections.find(sec=>sec.name == "Light Armor")
+        for(inv of inventoryCategory){if(inv.data.data.armor?.type.includes("light")){light.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.armor?.type.includes("medium"))){
+        await header.sections.push({name: "Medium Armor", items: []}); 
+        let medium = header.sections.find(sec=>sec.name == "Medium Armor")
+        for(inv of inventoryCategory){if(inv.data.data.armor?.type.includes("medium")){medium.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.data.data.armor?.type.includes("heavy"))){
+        await header.sections.push({name: "Heavy Armor", items: []}); 
+        let heavy = header.sections.find(sec=>sec.name == "Heavy Armor")
+        for(inv of inventoryCategory){if(inv.data.data.armor?.type.includes("heavy")){heavy.items.push(inv)}}
+    }
+}
+
+if(category == "equipment"){
+    header = {name: "Equipment", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.type == "tool" || 
+            inv.type == "loot" || 
+            inv.type == "backpack" || 
+            inv.name.includes("Wand") || 
+            inv.name.includes("Rod") || 
+            inv.name.includes("Staff") || 
+            inv.name.includes("Arcane Focus") || 
+            inv.name.includes("Druidic Focus") || 
+            inv.name.includes("Holy Symbol") || 
+            inv.name.includes("Instrument")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+
+    if(inventoryCategory.find(itm=>itm.name.includes("Staff") || itm.name.includes("Rod") || itm.name.includes("Wand"))){
+        await header.sections.push({name: "Staves, Rods, Wands", items: []}); 
+        let multi = header.sections.find(sec=>sec.name == "Staves, Rods, Wands")
+        for(inv of inventoryCategory){if(inv.name.includes("Staff") || inv.name.includes("Rod") || inv.name.includes("Wand")){multi.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Arcane Focus") || itm.name.includes("Holy Symbol") || itm.name.includes("Druidic Focus") || itm.name.includes("Instrument") || itm.data.data.toolType?.includes("music"))){
+        await header.sections.push({name: "Spellcasting Foci", items: []}); 
+        let multi = header.sections.find(sec=>sec.name == "Spellcasting Foci")
+        for(inv of inventoryCategory){if(inv.name.includes("Arcane Focus") || inv.name.includes("Holy Symbol") || inv.name.includes("Druidic Focus") || inv.name.includes("Instrument") || inv.data.data.toolType?.includes("music")){multi.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.type == "tool" && !itm.data.data.toolType?.includes("music") && !inv.name.includes("Dawnrune") && !inv.name.includes("Faterune") && !inv.name.includes("Talerune"))){
+        await header.sections.push({name: "Tools", items: []}); 
+        let tool = header.sections.find(sec=>sec.name == "Tools")
+        for(inv of inventoryCategory){if(inv.type == "tool" && !inv.data.data.toolType?.includes("music") && !inv.name.includes("Dawnrune") && !inv.name.includes("Faterune") && !inv.name.includes("Talerune")){tool.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.type == "loot")){
+        await header.sections.push({name: "Loot", items: []}); 
+        let loot = header.sections.find(sec=>sec.name == "Loot")
+        for(inv of inventoryCategory){if(inv.type == "loot"){loot.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.type == "backpack")){
+        await header.sections.push({name: "Containers", items: []}); 
+        let backpack = header.sections.find(sec=>sec.name == "Containers")
+        for(inv of inventoryCategory){if(inv.type == "backpack"){backpack.items.push(inv)}}
+    }
+    
+}
+
+if(category == "usables"){
+    header = {name: "Usables", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.name.includes("Potion") || 
+            inv.name.includes("Oil") || 
+            Boolean(inv.name.includes("Poison") && inv.type !== "equipment") || 
+            inv.name.includes("Ointment") || 
+            inv.name.includes("Scroll") || 
+            inv.name == "Burnt Othur Fumes" || 
+            inv.name == "Carrion Crawler Mucus" || 
+            inv.name == "Malice" || 
+            inv.name == "Serpent Venom" || 
+            inv.name.includes("50g") || 
+            inv.name.includes("100g") || 
+            inv.name.includes("150g") || 
+            inv.name.includes("500g") || 
+            inv.name.includes("999g") || 
+            inv.name.includes("1000g") || 
+            inv.name.includes("5000g") || 
+            inv.name.includes("Charcoal, Incense, and Herbs") || 
+            inv.name.includes("Brass Brazier") || 
+            inv.name.includes("Pearl") || 
+            inv.name.includes("Lead-Based Ink") || 
+            inv.name.includes("Hempen Rope (25 feet)") || 
+            inv.name.includes("Augury Tokens") || 
+            inv.name.includes("Platinum Ring") || 
+            inv.name.includes("Dust") || 
+            inv.name.includes("Jeweled Horn") || 
+            inv.name.includes("Glass Eye") || 
+            inv.name.includes("Holy Water (Flask)") || 
+            inv.name.includes("Vial of Blood") || 
+            inv.name.includes("Gem With Tears") || 
+            inv.name.includes("Gilded") || 
+            inv.name.includes("Incense and an Offering") || 
+            inv.name.includes("Eyeball Encased in Gem") || 
+            inv.name.includes("Platinum-Inlaid Vial") || 
+            inv.name.includes("Metal Lockbox") || 
+            inv.name.includes("Gold-Inlaid Vial") || 
+            inv.name.includes("Sunburst Pendant") || 
+            inv.name.includes("Herbs, Oils, and Incense") || 
+            inv.name.includes("Rare Oils and Unguents") || 
+            inv.name.includes("Scrying Focus") || 
+            inv.name.includes("Crystal Ball") || 
+            inv.name.includes("Golden Reliquary") || 
+            inv.name.includes("Statuette of Yourself") || 
+            inv.name == "Clay" || 
+            inv.name == "Ash" || 
+            inv.name.includes("Mandrake Root") || 
+            inv.name.includes("Jewel-Encrusted Dagger") || 
+            inv.name.includes("Gem-Encrusted Bowl") || 
+            inv.name.includes("Ornamental Container") || 
+            inv.name.includes("Tiny Silver Cage") || 
+            inv.name.includes("Ruby Vial") || 
+            inv.name.includes("Planar Symbol") || 
+            inv.name.includes("Miniature Platinum Sword") || 
+            inv.name.includes("Planar Tuning Fork") || 
+            inv.name.includes("Platinum Cord") || 
+            inv.name.includes("Cloning Vessel") || 
+            inv.name.includes("Shard of Onyx") || 
+            inv.name.includes("Tiny Reliquary") || 
+            inv.name.includes("Piece of Adamantine") || 
+            inv.name.includes("Jade Circlet") || 
+            inv.name.includes("Hourglass")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+
+    if(inventoryCategory.find(itm=>itm.name.includes("Potion") || itm.name.includes("Oil"))){
+        await header.sections.push({name: "Potions", items: []}); 
+        let potion = header.sections.find(sec=>sec.name == "Potions")
+        for(inv of inventoryCategory){if(inv.name.includes("Potion") || inv.name.includes("Oil")){potion.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Poison") || itm.name.includes("Burnt Othur Fumes") || itm.name.includes("Carrion Crawler Mucus") || itm.name.includes("Malice") || itm.name.includes("Serpent Venom"))){
+        await header.sections.push({name: "Poisons", items: []}); 
+        let poison = header.sections.find(sec=>sec.name == "Poisons")
+        for(inv of inventoryCategory){if(inv.name.includes("Poison") || inv.name.includes("Burnt Othur Fumes") || inv.name.includes("Carrion Crawler Mucus") || inv.name.includes("Malice") || inv.name.includes("Serpent Venom")){poison.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Scroll"))){
+        await header.sections.push({name: "Scrolls", items: []}); 
+        let scroll = header.sections.find(sec=>sec.name == "Scrolls")
+        for(inv of inventoryCategory){if(inv.name.includes("Scroll")){scroll.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>
+        itm.name.includes("50g") || 
+        itm.name.includes("100g") || 
+        itm.name.includes("150g") || 
+        itm.name.includes("500g") || 
+        itm.name.includes("999g") || 
+        itm.name.includes("1000g") || 
+        itm.name.includes("5000g") || 
+        itm.name.includes("Charcoal, Incense, and Herbs") || 
+        itm.name.includes("Brass Brazier") || 
+        itm.name.includes("Pearl") || 
+        itm.name.includes("Lead-Based Ink") || 
+        itm.name.includes("Hempen Rope (25 feet)") || 
+        itm.name.includes("Augury Tokens") || 
+        itm.name.includes("Platinum Ring") || 
+        itm.name.includes("Dust") || 
+        itm.name.includes("Jeweled Horn") || 
+        itm.name.includes("Glass Eye") || 
+        itm.name.includes("Holy Water (Flask)") || 
+        itm.name.includes("Vial of Blood") || 
+        itm.name.includes("Gem With Tears") || 
+        itm.name.includes("Gilded") || 
+        itm.name.includes("Incense and an Offering") || 
+        itm.name.includes("Eyeball Encased in Gem") || 
+        itm.name.includes("Platinum-Inlaid Vial") || 
+        itm.name.includes("Metal Lockbox") || 
+        itm.name.includes("Gold-Inlaid Vial") || 
+        itm.name.includes("Sunburst Pendant") || 
+        itm.name.includes("Herbs, Oils, and Incense") || 
+        itm.name.includes("Rare Oils and Unguents") || 
+        itm.name.includes("Scrying Focus") || 
+        itm.name.includes("Crystal Ball") || 
+        itm.name.includes("Golden Reliquary") || 
+        itm.name.includes("Statuette of Yourself") || 
+        itm.name == "Clay" || 
+        itm.name == "Ash" || 
+        itm.name.includes("Mandrake Root") || 
+        itm.name.includes("Jewel-Encrusted Dagger") || 
+        itm.name.includes("Gem-Encrusted Bowl") || 
+        itm.name.includes("Ornamental Container") || 
+        itm.name.includes("Tiny Silver Cage") || 
+        itm.name.includes("Ruby Vial") || 
+        itm.name.includes("Planar Symbol") || 
+        itm.name.includes("Miniature Platinum Sword") || 
+        itm.name.includes("Planar Tuning Fork") || 
+        itm.name.includes("Platinum Cord") || 
+        itm.name.includes("Cloning Vessel") || 
+        itm.name.includes("Shard of Onyx") || 
+        itm.name.includes("Tiny Reliquary") || 
+        itm.name.includes("Piece of Adamantine") || 
+        itm.name.includes("Jade Circlet") || 
+        itm.name.includes("Hourglass")
+        )){
+        await header.sections.push({name: "Material Components", items: []}); 
+        let material = header.sections.find(sec=>sec.name == "Material Components")
+        for(inv of inventoryCategory){if(
+            inv.name.includes("50g") || 
+            inv.name.includes("100g") || 
+            inv.name.includes("150g") || 
+            inv.name.includes("500g") || 
+            inv.name.includes("999g") || 
+            inv.name.includes("1000g") || 
+            inv.name.includes("5000g") || 
+            inv.name.includes("Charcoal, Incense, and Herbs") || 
+            inv.name.includes("Brass Brazier") || 
+            inv.name.includes("Pearl") || 
+            inv.name.includes("Lead-Based Ink") || 
+            inv.name.includes("Hempen Rope (25 feet)") || 
+            inv.name.includes("Augury Tokens") || 
+            inv.name.includes("Platinum Ring") || 
+            inv.name.includes("Dust") || 
+            inv.name.includes("Jeweled Horn") || 
+            inv.name.includes("Glass Eye") || 
+            inv.name.includes("Holy Water (Flask)") || 
+            inv.name.includes("Vial of Blood") || 
+            inv.name.includes("Gem With Tears") || 
+            inv.name.includes("Gilded") || 
+            inv.name.includes("Incense and an Offering") || 
+            inv.name.includes("Eyeball Encased in Gem") || 
+            inv.name.includes("Platinum-Inlaid Vial") || 
+            inv.name.includes("Metal Lockbox") || 
+            inv.name.includes("Gold-Inlaid Vial") || 
+            inv.name.includes("Sunburst Pendant") || 
+            inv.name.includes("Herbs, Oils, and Incense") || 
+            inv.name.includes("Rare Oils and Unguents") || 
+            inv.name.includes("Scrying Focus") || 
+            inv.name.includes("Crystal Ball") || 
+            inv.name.includes("Golden Reliquary") || 
+            inv.name.includes("Statuette of Yourself") || 
+            inv.name == "Clay" || 
+            inv.name == "Ash" || 
+            inv.name.includes("Mandrake Root") || 
+            inv.name.includes("Jewel-Encrusted Dagger") || 
+            inv.name.includes("Gem-Encrusted Bowl") || 
+            inv.name.includes("Ornamental Container") || 
+            inv.name.includes("Tiny Silver Cage") || 
+            inv.name.includes("Ruby Vial") || 
+            inv.name.includes("Planar Symbol") || 
+            inv.name.includes("Miniature Platinum Sword") || 
+            inv.name.includes("Planar Tuning Fork") || 
+            inv.name.includes("Platinum Cord") || 
+            inv.name.includes("Cloning Vessel") || 
+            inv.name.includes("Shard of Onyx") || 
+            inv.name.includes("Tiny Reliquary") || 
+            inv.name.includes("Piece of Adamantine") || 
+            inv.name.includes("Jade Circlet") || 
+            inv.name.includes("Hourglass")
+            ){material.items.push(inv)}}
+    }
+}
+
+if(category == "motes"){
+    header = {name: "Motes", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.name.includes("Mote (")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Vyl)"))){
+        await header.sections.push({name: "Vyl", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Vyl")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Vyl)")){motes.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Sol)"))){
+        await header.sections.push({name: "Sol", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Sol")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Sol)")){motes.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Rul)"))){
+        await header.sections.push({name: "Rul", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Rul")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Rul)")){motes.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Kal)"))){
+        await header.sections.push({name: "Kal", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Kal")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Kal)")){motes.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Bel)"))){
+        await header.sections.push({name: "Bel", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Bel")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Bel)")){motes.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Mote (Ahl)"))){
+        await header.sections.push({name: "Ahl", items: []}); 
+        let motes = header.sections.find(sec=>sec.name == "Ahl")
+        for(inv of inventoryCategory){if(inv.name.includes("Mote (Ahl)")){motes.items.push(inv)}}
+    }
+}
+
+if(category == "relics"){
+    header = {name: "Relics", sections: []}
+    for(inv of inventoryFull){
+        if(
+            inv.name.includes("Relic (")
+        ){
+            inventoryCategory.push((await userItems.getDocument(userItems.index.find(ent=>ent.name === inv.name)._id)))
+        }
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Vyl)"))){
+        await header.sections.push({name: "Vyl", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Vyl")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Vyl)")){relics.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Sol)"))){
+        await header.sections.push({name: "Sol", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Sol")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Sol)")){relics.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Rul)"))){
+        await header.sections.push({name: "Rul", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Rul")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Rul)")){relics.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Kal)"))){
+        await header.sections.push({name: "Kal", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Kal")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Kal)")){relics.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Bel)"))){
+        await header.sections.push({name: "Bel", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Bel")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Bel)")){relics.items.push(inv)}}
+    }
+    if(inventoryCategory.find(itm=>itm.name.includes("Relic (Ahl)"))){
+        await header.sections.push({name: "Ahl", items: []}); 
+        let relics = header.sections.find(sec=>sec.name == "Ahl")
+        for(inv of inventoryCategory){if(inv.name.includes("Relic (Ahl)")){relics.items.push(inv)}}
+    }
+}
+
+let itemGrid = ``
+
+for(sect of header.sections){
+    itemGrid += `<h1>${sect.name}</h1>`
+    for(it of sect.items){
+
+        let slotDisplay = ""
+        let itemMoteEffect = it.data.effects?.find(e=>e.data.label.includes("[Motes:"))
+        if(itemMoteEffect !== undefined){
+            let itemMoteChange = itemMoteEffect.data.changes?.find(c=>c.key == "data.resources.primary.value")
+            slotDisplay = `${parseInt(itemMoteChange.value)} M`
+        }
+        let itemRelicEffect = it.data.effects?.find(e=>e.data.label.includes("Relic Slots"))
+        if(itemRelicEffect !== undefined){
+            let itemRelicChange = itemRelicEffect.data.changes?.find(c=>c.key == "data.resources.secondary.value")
+            slotDisplay = `${parseInt(itemRelicChange.value)} R`
+        }
+    
+        let attunement = ""
+        if(it.data.data.attunement){if(it.data.data.attunement > 0){attunement = '<i class="fas fa-sun"></i>'}}
+
+        let proficientLabel = ""
+        let notProficientLabel = `<font color="red"><em>(Not Proficient)</em></font> `
+        if(it.data.data.weaponType?.includes("simple") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "sim")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+        if(it.data.data.weaponType?.includes("martial") && !vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == "mar")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.weaponProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+        if(it.data.data.armor?.type == "light" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "lgt")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+        if(it.data.data.armor?.type == "medium" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "med")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+        if(it.data.data.armor?.type == "heavy" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "hvy")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+        if(it.data.data.armor?.type == "shield" && !vessel.data.data.traits.armorProf.value.find(itm=>[itm] == "shl")){
+            proficientLabel = notProficientLabel
+            if(vessel.data.data.traits.armorProf.value.find(itm=>[itm] == it.data.data.baseItem)){proficientLabel = ""}
+        }
+
+        let rarityColor = ""
+        if(it.data.data.rarity?.includes("uncommon")){rarityColor = "#00ff00"}
+        if(it.data.data.rarity?.includes("rare")){rarityColor = "#0000ff"}
+        if(it.data.data.rarity?.includes("veryRare")){rarityColor = "#ff00ff"}
+        if(it.data.data.rarity?.includes("legendary")){rarityColor = "#ffd700"}
+
+        itemGrid += `
+        <div class="image-grid">
+        <div class="back">
+            <div class="image">
+                <img class="image__img" src="media/Images/Symbols/Icons/UI/arrow%20(left).webp">
+                <div class="image__overlay image__overlay--primary go__back"><div class="image__title" style="font-size: 0.75em;">Go Back</div></div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="image">
+                <img class="image__img" src=${it.img}>
+                <div class="image__counter"><div class="image__count">${it.data.data.quantity}</div></div>
+                <div class="image__attunement">${attunement}</div>
+                <div class="image__overlay image__overlay--primary" onclick="inspectItem${it.id}()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+            </div>
+            <script>
+                async function inspectItem${it.id}(){
+                    Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                    const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                    const item = (await userItems.getDocument("${it.id}"))
+                    item.sheet._render(true, {top: 610, left: 610, width: 680, height: 500}).then(a=>$("#item-${it.id}").find("a[data-tab='description']")[0].click())
+                }
+            </script>
+        </div>
+        <div class="name">
+            <p>${proficientLabel}<font color="${rarityColor}">${it.name}</font></p>
+        </div>
+        <div class="slot">
+            <p><em>${slotDisplay}</em></p>
+        </div>
+        <div class="confirm">
+            <div class="image">
+                <img class="image__img" src="media/Images/Symbols/Icons/UI/arrow%20(right).webp">
+                <div class="image__overlay image__overlay--primary execute" onclick="selectItem${it.id}()"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+            </div>
+            <script>
+                async function selectItem${it.id}(){
+                    Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                    const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                    const item = (await userItems.getDocument("${it.id}"))
+                    item.sheet._render(true, {top: 610, left: 610, width: 680, height: 500}).then(a=>$("#item-${it.id}").find("a[data-tab='description']")[0].click())
+                    game.macros.find(m=>m.name==="Bind Items 04 (Confirm)").execute("${spirit.id}", "${vessel.id}", "${category}", "${it.id}");
+                }
+            </script>
+        </div>
+        </div>
+        `
+
+    }
+}
+
+let chooseItemContent = `
+<style>
+.back {grid-area: back;}
+.item {grid-area: item;}
+.name {font-size: 14px; grid-area: name;}
+.slot {text-align: right; font-size: 14px; grid-area: slot;}
+.confirm {grid-area: confirm;}
+.image {position: relative; margin-left: auto; margin-right: auto; width: 50px;}
+.imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+.image__img {display: block; width: 100%;}
+.image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+.image__overlay--blur {backdrop-filter: blur(5px);}
+.image__overlay--primary {background: #e57509;}
+.image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+.image__overlay:hover {opacity: 0.8;}
+.image__overlay:hover > * {transform: translateY(0);}
+.image__title {font-weight: bold; text-align: center;}
+.image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+.image__count {font-size: 1.5em;font-weight: bold;}
+.image__attunement {position: absolute;top: 27px;left: 27px;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #aa0000;font-family: 'Quicksand', sans-serif; font-size: 1.5em;}
+.image__description {font-size: 1em; margin-top: 0.25em;}
+
+.image-grid {
+    box-sizing: border-box;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 6fr 1fr 1fr;
+    grid-template-rows: 50px;
+    grid-gap: 2px;
+    justify-content: space-around;
+    align-content: space-around;
+    align-items: center; 
+    grid-template-areas:
+        "back item name slot confirm"
+}
+.image-grid > img {width: 100%; height: 100%;}
+</style>
+<html>
+<body>
+${itemGrid}
+</body>
+</html>
+`
+
+const dialogChooseItem = new Dialog({
+    title: "Binding Circle",
+    content: chooseItemContent,
+    buttons: {
+        buttonBack: {
+            label: `Go Back`,
+            callback: async () => {
+                Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                vessel.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$(`#actor-${vessel.id}`).find(`a[data-tab='inventory']`)[0].click())
+                tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseItem.close(); return}
+                game.macros.find(m=>m.name==="Bind Items 02 (Choose Category)").execute(spirit.id, vessel.id);
+            }
+        }
+    },
+    render: (html) => {
+        html.find(".execute").click(async function () {
+            vessel.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$(`#actor-${vessel.id}`).find(`a[data-tab='inventory']`)[0].click())
+            await dialogChooseItem.close();})
+        html.find(".go__back").click(async function () {
+            await dialogChooseItem.close();
+            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+            vessel.sheet._render(true, {top: 0, left: 610, width: 680, height: 600}).then(a=>$(`#actor-${vessel.id}`).find(`a[data-tab='inventory']`)[0].click())
+            tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+            if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+            else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseItem.close(); return}
+            game.macros.find(m=>m.name==="Bind Items 02 (Choose Category)").execute(spirit.id, vessel.id);
+        })
+    }
+}, {width: 600, top: 0, left: 0}).render(true);
