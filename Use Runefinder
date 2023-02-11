@@ -1,0 +1,726 @@
+functionChooseRunefinder()
+
+async function functionChooseRunefinder(){
+    const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+    if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use the finding circle.'); return;} 
+    let spirit = game.actors.find(a=>a.id === args[0]);
+    if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+    
+    const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "finding-click")
+    let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); return}
+    
+    let actorSkullcoin = 0;
+    let skullcoinCost = 0;
+    let skullcoinCostBulk = 0;
+    
+    let itemDefaultImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(0)%20-%20icon.webp";
+    let itemAhlImage = itemDefaultImage;
+    let itemBelImage = itemDefaultImage;
+    let itemKalImage = itemDefaultImage;
+    let itemRulImage = itemDefaultImage;
+    let itemSolImage = itemDefaultImage;
+    let itemVylImage = itemDefaultImage;
+    let itemImage = "";
+    
+    let itemAhlName = `<b style="color: darkgray">Ahl</b>`;
+    let itemBelName = `<b style="color: #00ff00">Bel</b>`;
+    let itemKalName = `<b style="color: #0000ff">Kal</b>`;
+    let itemRulName = `<b style="color: #ff00ff">Rul</b>`;
+    let itemSolName = `<b style="color: orange">Sol</b>`;
+    let itemVylName = `<b style="color: #550000">Vyl</b>`;
+    let itemName = "";
+    
+    const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+    const filterDAhl = userItems.index.filter(ent=>ent.name === "Runefinder (Ahl)"); const itemsAhl = []; for(f of filterDAhl){itemsAhl.push(await userItems.getDocument(f._id))}
+    const filterDBel = userItems.index.filter(ent=>ent.name === "Runefinder (Bel)"); const itemsBel = []; for(f of filterDBel){itemsBel.push(await userItems.getDocument(f._id))}
+    const filterDKal = userItems.index.filter(ent=>ent.name === "Runefinder (Kal)"); const itemsKal = []; for(f of filterDKal){itemsKal.push(await userItems.getDocument(f._id))}
+    const filterDRul = userItems.index.filter(ent=>ent.name === "Runefinder (Rul)"); const itemsRul = []; for(f of filterDRul){itemsRul.push(await userItems.getDocument(f._id))}
+    const filterDSol = userItems.index.filter(ent=>ent.name === "Runefinder (Sol)"); const itemsSol = []; for(f of filterDSol){itemsSol.push(await userItems.getDocument(f._id))}
+    const filterDVyl = userItems.index.filter(ent=>ent.name === "Runefinder (Vyl)"); const itemsVyl = []; for(f of filterDVyl){itemsVyl.push(await userItems.getDocument(f._id))}
+    
+    let itemsQuantity = 0; let itemsAhlQuantity = 0; let itemsBelQuantity = 0; let itemsKalQuantity = 0; let itemsRulQuantity = 0; let itemsSolQuantity = 0; let itemsVylQuantity = 0; 
+    
+    if(itemsAhl == undefined || itemsAhl.length == 0) {itemsAhlQuantity = ""} else {for(d of itemsAhl){itemsAhlQuantity = itemsAhlQuantity + d.data.data.quantity}}
+    if(itemsBel == undefined || itemsBel.length == 0) {itemsBelQuantity = ""} else {for(d of itemsBel){itemsBelQuantity = itemsBelQuantity + d.data.data.quantity}}
+    if(itemsKal == undefined || itemsKal.length == 0) {itemsKalQuantity = ""} else {for(d of itemsKal){itemsKalQuantity = itemsKalQuantity + d.data.data.quantity}}
+    if(itemsRul == undefined || itemsRul.length == 0) {itemsRulQuantity = ""} else {for(d of itemsRul){itemsRulQuantity = itemsRulQuantity + d.data.data.quantity}}
+    if(itemsSol == undefined || itemsSol.length == 0) {itemsSolQuantity = ""} else {for(d of itemsSol){itemsSolQuantity = itemsSolQuantity + d.data.data.quantity}}
+    if(itemsVyl == undefined || itemsVyl.length == 0) {itemsVylQuantity = ""} else {for(d of itemsVyl){itemsVylQuantity = itemsVylQuantity + d.data.data.quantity}}
+    
+    if(itemsAhlQuantity > 0) {itemAhlImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Ahl)%20-%20icon.webp";};
+    if(itemsBelQuantity > 0) {itemBelImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Bel)%20-%20icon.webp";};
+    if(itemsKalQuantity > 0) {itemKalImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Kal)%20-%20icon.webp";};
+    if(itemsRulQuantity > 0) {itemRulImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Rul)%20-%20icon.webp";};
+    if(itemsSolQuantity > 0) {itemSolImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Sol)%20-%20icon.webp";};
+    if(itemsVylQuantity > 0) {itemVylImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Vyl)%20-%20icon.webp";};
+    
+    let chosenItem = "";
+    let usedItem = "";
+    let chosenRolltable = "";
+    let tableCompendium = "";
+    
+    const imageHover = `
+    <style>
+    .image {position: relative; margin-left: auto; margin-right: auto; width: 55px;}
+    .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+    .image__img {display: block; width: 100%;}
+    .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+    .image__overlay--blur {backdrop-filter: blur(5px);}
+    .image__overlay--primary {background: #e57509;}
+    .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+    .image__overlay:hover {opacity: 0.8;}
+    .image__overlay:hover > * {transform: translateY(0);}
+    .image__title {font-weight: bold; text-align: center;}
+    .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+    .image__count {font-size: 2em;font-weight: bold;}
+    </style>
+    `
+    
+    let dialogChooseRunefinder = new Dialog ({
+        title: "Finding Circle",
+        content: imageHover + `
+        <h1 style="text-align: center">Choose a Runefinder</h1>
+        <table style="width: 100%; border-style: hidden;" border="1" cellpadding="1">
+            <tr>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemAhlName}</td>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemBelName}</td>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemKalName}</td>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemRulName}</td>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemSolName}</td>
+                <td style="width: 16.5%; text-align: center; vertical-align: middle; border-style: hidden;">${itemVylName}</td>
+            </tr>
+            <tr>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemAhlImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsAhlQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="ahlId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemBelImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsBelQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="belId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemKalImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsKalQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="kalId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemRulImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsRulQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="rulId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemSolImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsSolQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="solId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+                <td style="width: 16.5%; border-style: hidden;">
+                    <div class="image">
+                    <img class="image__img" src=${itemVylImage} width="55">
+                    <div class="image__counter"><div class="image__count">${itemsVylQuantity}</div></div>
+                    <div class="image__overlay image__overlay--primary" id="vylId"><div class="image__title" style="font-size: 0.75em;">Select & Continue</div></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        `,
+        buttons: {
+            buttonGoBack: {
+                label: `Go Back`,
+                callback: async () => {
+                    tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseRunefinder.close(); return}
+                    game.macros.find(m=>m.name==="Use Finding Circle").execute();
+                }
+            }
+        },
+        render: (html) => {
+            html.find("#ahlId").click(async function () {
+                chosenItem = "chooseItemAhl"
+                tableCompendium = game.packs.get("ArkData.tables-ahl-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Ahl)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Ahl)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Ahl)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 3000;
+                skullcoinCostBulk = 30000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+            html.find("#belId").click(async function () {
+                chosenItem = "chooseItemBel"
+                tableCompendium = game.packs.get("ArkData.tables-bel-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Bel)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Bel)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Bel)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 24000;
+                skullcoinCostBulk = 240000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+            html.find("#kalId").click(async function () {
+                chosenItem = "chooseItemKal"
+                tableCompendium = game.packs.get("ArkData.tables-kal-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Kal)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Kal)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Kal)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 144000;
+                skullcoinCostBulk = 1440000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+            html.find("#rulId").click(async function () {
+                chosenItem = "chooseItemRul"
+                tableCompendium = game.packs.get("ArkData.tables-rul-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Rul)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Rul)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Rul)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 576000;
+                skullcoinCostBulk = 5760000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+            html.find("#solId").click(async function () {
+                chosenItem = "chooseItemSol"
+                tableCompendium = game.packs.get("ArkData.tables-sol-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Sol)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Sol)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Sol)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 1152000;
+                skullcoinCostBulk = 11520000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+            html.find("#vylId").click(async function () {
+                chosenItem = "chooseItemVyl"
+                tableCompendium = game.packs.get("ArkData.tables-vyl-bng");
+                chosenRolltable = (await tableCompendium.getDocument(tableCompendium.index.find(t=>t.name == "Use (Table): Runefinder (Vyl)")._id));
+                if(userItems.index.find(ent=>ent.name === "Runefinder (Vyl)")){
+                    usedItem = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Runefinder (Vyl)")._id))
+                } else {usedItem = undefined}
+                skullcoinCost = 2304000;
+                skullcoinCostBulk = 23040000;
+                await dialogChooseRunefinder.close();
+                functionUseRunefinder();
+            })
+        }
+    }, {width: 400, height: 215}).render(true);
+    
+    let newItemName = ""; 
+    let newItemName0 = ""; let newItemName1 = ""; let newItemName2 = ""; let newItemName3 = ""; let newItemName4 = ""; 
+    let newItemName5 = ""; let newItemName6 = ""; let newItemName7 = ""; let newItemName8 = ""; let newItemName9 = ""; 
+    
+    let newItemImage = ""; 
+    let newItemImage0 = ""; let newItemImage1 = ""; let newItemImage2 = ""; let newItemImage3 = ""; let newItemImage4 = ""; 
+    let newItemImage5 = ""; let newItemImage6 = ""; let newItemImage7 = ""; let newItemImage8 = ""; let newItemImage9 = ""; 
+    
+    let resultImage = "";
+    
+    async function functionUseRunefinder() {
+
+        itemsQuantity = 0; itemsAhlQuantity = 0; itemsBelQuantity = 0; itemsKalQuantity = 0; itemsRulQuantity = 0; itemsSolQuantity = 0; itemsVylQuantity = 0; 
+        if(itemsAhl == undefined || itemsAhl.length == 0) {itemsAhlQuantity = ""} else {for(d of itemsAhl){itemsAhlQuantity = itemsAhlQuantity + d.data.data.quantity}}
+        if(itemsBel == undefined || itemsBel.length == 0) {itemsBelQuantity = ""} else {for(d of itemsBel){itemsBelQuantity = itemsBelQuantity + d.data.data.quantity}}
+        if(itemsKal == undefined || itemsKal.length == 0) {itemsKalQuantity = ""} else {for(d of itemsKal){itemsKalQuantity = itemsKalQuantity + d.data.data.quantity}}
+        if(itemsRul == undefined || itemsRul.length == 0) {itemsRulQuantity = ""} else {for(d of itemsRul){itemsRulQuantity = itemsRulQuantity + d.data.data.quantity}}
+        if(itemsSol == undefined || itemsSol.length == 0) {itemsSolQuantity = ""} else {for(d of itemsSol){itemsSolQuantity = itemsSolQuantity + d.data.data.quantity}}
+        if(itemsVyl == undefined || itemsVyl.length == 0) {itemsVylQuantity = ""} else {for(d of itemsVyl){itemsVylQuantity = itemsVylQuantity + d.data.data.quantity}}
+    
+        if(itemsAhlQuantity >= 1) {itemAhlImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Ahl)%20-%20icon.webp"};
+        if(itemsBelQuantity >= 1) {itemBelImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Bel)%20-%20icon.webp"};
+        if(itemsKalQuantity >= 1) {itemKalImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Kal)%20-%20icon.webp"};
+        if(itemsRulQuantity >= 1) {itemRulImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Rul)%20-%20icon.webp"};
+        if(itemsSolQuantity >= 1) {itemSolImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Sol)%20-%20icon.webp"};
+        if(itemsVylQuantity >= 1) {itemVylImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Vyl)%20-%20icon.webp"};
+    
+        if(chosenItem == "chooseItemAhl"){itemsQuantity = itemsAhlQuantity; itemImage = itemAhlImage; itemName = itemAhlName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Ahl)%20-%20icon.webp";};
+        if(chosenItem == "chooseItemBel"){itemsQuantity = itemsBelQuantity; itemImage = itemBelImage; itemName = itemBelName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Bel)%20-%20icon.webp";};
+        if(chosenItem == "chooseItemKal"){itemsQuantity = itemsKalQuantity; itemImage = itemKalImage; itemName = itemKalName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Kal)%20-%20icon.webp";};
+        if(chosenItem == "chooseItemRul"){itemsQuantity = itemsRulQuantity; itemImage = itemRulImage; itemName = itemRulName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Rul)%20-%20icon.webp";};
+        if(chosenItem == "chooseItemSol"){itemsQuantity = itemsSolQuantity; itemImage = itemSolImage; itemName = itemSolName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Sol)%20-%20icon.webp";};
+        if(chosenItem == "chooseItemVyl"){itemsQuantity = itemsVylQuantity; itemImage = itemVylImage; itemName = itemVylName; resultImage = "media/Images/Symbols/Icons/Objects/All%20Runes%20(Vyl)%20-%20icon.webp";};
+    
+        actorSkullcoin = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "Skullcoin")._id)).data.data.quantity
+    
+        let contentResources = `
+        <style>
+        .image {position: relative; margin-left: auto; margin-right: auto; width: 100px;}
+        .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+        .image__img {display: block; width: 100%;}
+        .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+        .image__overlay--blur {backdrop-filter: blur(5px);}
+        .image__overlay--primary {background: #e57509;}
+        .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+        .image__overlay:hover {opacity: 0.8;}
+        .image__overlay:hover > * {transform: translateY(0);}
+        .image__title {font-weight: bold; text-align: center;}
+        .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+        .image__count {font-size: 2em;font-weight: bold;}
+        .image__description {font-size: 1em; margin-top: 0.25em;}
+        </style>
+        <table style="width: 100%; border-style: hidden;" border="1">
+            <tr>
+                <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><h1 style="text-align: center">Awaken 1</h1></td>
+                <td style="width: 50%; text-align: center; vertical-align: middle; border-style: hidden;"><h1 style="text-align: center">Awaken 10</h1></td>
+            </tr>
+            <tr>
+                <td style="width: 50%; border-style: hidden; text-align: center; vertical-align: middle;">
+                    <div class="image">
+                    <img class="image__img" src=${resultImage} width="50">
+                    <div class="image__overlay image__overlay--primary" id="X1Id"><div class="image__title" style="font-size: 1.5em;">X1</div>
+                    <p class="image__description">${skullcoinCost.toLocaleString("en-US")} SC</p></div>
+                    </div>
+                </td>
+                <td style="width: 50%; border-style: hidden; text-align: center; vertical-align: middle;">
+                    <div class="image">
+                    <img class="image__img" src=${resultImage} width="50">
+                    <div class="image__overlay image__overlay--primary" id="X10Id"><div class="image__title" style="font-size: 1.5em;">X10</div>
+                    <p class="image__description">${skullcoinCostBulk.toLocaleString("en-US")} SC</p></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <table style="width: 100%;" border="1">
+            <tr>
+                <td style="width: 10%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="30"/></td>
+                <td style="width: 30%; text-align: left; vertical-align: middle; border-style: hidden;">Your Runefinders:</td>
+                <td style="width: 60%; text-align: left; vertical-align: middle; border-style: hidden;"><font size="5">${itemsQuantity}</font></td>
+            </tr>
+        </table>
+        <table style="width: 100%;" border="1">
+            <tr>
+                <td style="width: 10%; text-align: center; vertical-align: middle; border-style: hidden;"><img src="media/Images/Symbols/Icons/Objects/SC%20-%20icon.webp" width="30"/></td>
+                <td style="width: 30%; text-align: left; vertical-align: middle; border-style: hidden;">Your Skullcoin:</td>
+                <td style="width: 60%; text-align: left; vertical-align: middle; border-style: hidden;"><font size="5">${actorSkullcoin.toLocaleString("en-US")}</font></td>
+            </tr>
+        </table>
+        `
+    
+        let dialogUseRunefinder = new Dialog ({
+            title: "Finding Circle",
+            content: contentResources,
+            buttons: {
+                buttonGoBack: {
+                    label: `Go Back`,
+                    callback: () => {
+                        functionChooseRunefinder();
+                    }
+                }
+            },
+            render: (html) => {
+                html.find("#X1Id").click(async function () {
+                    if(usedItem == undefined || usedItem.data.data.quantity < 1){erSound(); ui.notifications.warn(`You don't have any <b>${itemName} runefinders</b>`);} 
+                    else if(actorSkullcoin < skullcoinCost){erSound(); ui.notifications.warn(`You don't have enough skullcoin to use this <b>${itemName} runefinder</b>`);} 
+                    else {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogUseRunefinder.close(); return}
+                        let roll = await chosenRolltable.draw({displayChat: false});
+                        let rollId = roll.results[0].data.resultId;
+                        let rollSource = roll.results[0].data.collection
+                        newItemName = roll.results[0].data.text
+                        newItemImage = roll.results[0].data.img
+                        game.macros.find(m=>m.name==="Use Runefinder (GM, Single)").execute(spirit.data._id, usedItem.data._id, chosenRolltable.name, rollId, rollSource, newItemName, newItemImage, skullcoinCost, itemImage)
+                        functionResults();
+                        await dialogUseRunefinder.close();
+                    }
+                })
+                html.find("#X10Id").click(async function () {
+                    if(usedItem == undefined || usedItem.data.data.quantity < 10){erSound(); ui.notifications.warn(`You don't have enough <b>${itemName} runefinders</b>`);} 
+                    else if(actorSkullcoin < skullcoinCostBulk){erSound(); ui.notifications.warn(`You don't have enough skullcoin to use 10 <b>${itemName} runefinders</b>`);} 
+                    else {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogUseRunefinder.close(); return}
+                        let roll = await chosenRolltable.drawMany(10, {displayChat: false});
+                        let rollId0 = roll.results[0].data.resultId;
+                        let rollId1 = roll.results[1].data.resultId;
+                        let rollId2 = roll.results[2].data.resultId;
+                        let rollId3 = roll.results[3].data.resultId;
+                        let rollId4 = roll.results[4].data.resultId;
+                        let rollId5 = roll.results[5].data.resultId;
+                        let rollId6 = roll.results[6].data.resultId;
+                        let rollId7 = roll.results[7].data.resultId;
+                        let rollId8 = roll.results[8].data.resultId;
+                        let rollId9 = roll.results[9].data.resultId;
+    
+                        let rollSource0 = roll.results[0].data.collection
+                        let rollSource1 = roll.results[1].data.collection
+                        let rollSource2 = roll.results[2].data.collection
+                        let rollSource3 = roll.results[3].data.collection
+                        let rollSource4 = roll.results[4].data.collection
+                        let rollSource5 = roll.results[5].data.collection
+                        let rollSource6 = roll.results[6].data.collection
+                        let rollSource7 = roll.results[7].data.collection
+                        let rollSource8 = roll.results[8].data.collection
+                        let rollSource9 = roll.results[9].data.collection
+    
+                        newItemName0 = roll.results[0].data.text; newItemImage0 = roll.results[0].data.img
+                        newItemName1 = roll.results[1].data.text; newItemImage1 = roll.results[1].data.img
+                        newItemName2 = roll.results[2].data.text; newItemImage2 = roll.results[2].data.img
+                        newItemName3 = roll.results[3].data.text; newItemImage3 = roll.results[3].data.img
+                        newItemName4 = roll.results[4].data.text; newItemImage4 = roll.results[4].data.img
+                        newItemName5 = roll.results[5].data.text; newItemImage5 = roll.results[5].data.img
+                        newItemName6 = roll.results[6].data.text; newItemImage6 = roll.results[6].data.img
+                        newItemName7 = roll.results[7].data.text; newItemImage7 = roll.results[7].data.img
+                        newItemName8 = roll.results[8].data.text; newItemImage8 = roll.results[8].data.img
+                        newItemName9 = roll.results[9].data.text; newItemImage9 = roll.results[9].data.img
+    
+                        game.macros.find(m=>m.name==="Use Runefinder (GM, Stack)").execute(
+                            rollId0, rollId1, rollId2, rollId3, rollId4, 
+                            rollId5, rollId6, rollId7, rollId8, rollId9, 
+                            rollSource0, rollSource1, rollSource2, rollSource3, rollSource4, 
+                            rollSource5, rollSource6, rollSource7, rollSource8, rollSource9, 
+                            newItemName0, newItemName1, newItemName2, newItemName3, newItemName4, 
+                            newItemName5, newItemName6, newItemName7, newItemName8, newItemName9, 
+                            newItemImage0, newItemImage1, newItemImage2, newItemImage3, newItemImage4, 
+                            newItemImage5, newItemImage6, newItemImage7, newItemImage8, newItemImage9, 
+                            spirit.data._id, 
+                            usedItem.data._id, 
+                            chosenRolltable.name, 
+                            skullcoinCostBulk, 
+                            itemImage
+                        );
+                        functionResultsBulk();
+                        await dialogUseRunefinder.close();
+                    }
+                })
+            }
+        }, {width: 400, height: 350}).render(true);
+    }
+    
+    async function functionResults() {
+
+        await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/sfx_conj_holy.mp3", volume: 0.5}, false);
+    
+        let dialogResults = new Dialog ({
+            title: "Finding Circle",
+            content: `
+            <style>
+            .image {position: relative; margin-left: auto; margin-right: auto; width: 35px;}
+            .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+            .image__img {display: block; width: 100%;}
+            .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+            .image__overlay--blur {backdrop-filter: blur(5px);}
+            .image__overlay--primary {background: #e57509;}
+            .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+            .image__overlay:hover {opacity: 0.8;}
+            .image__overlay:hover > * {transform: translateY(0);}
+            .image__title {font-weight: bold; text-align: center;}
+            .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+            .image__count {font-size: 2em;font-weight: bold;}
+            </style>
+            <h2 style="text-align: center">You found a rune</h2>
+            <table style="width: 100%;" border="1">
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName}</td>
+            </tr>
+            </table>
+            `,
+            buttons: {
+                buttonAwakenAnother: {
+                    label: `Awaken Another`,
+                    callback: async () => {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogResults.close(); return}
+                        functionUseRunefinder();
+                    }
+                },
+                buttonGoBack: {
+                    label: `Main Menu`,
+                    callback: async () => {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseRunefinder.close(); return}
+                        game.macros.find(m=>m.name==="Use Finding Circle").execute();
+                    }
+                }
+            }
+        }, {width: 400, height: 180}).render(true);
+    }
+    
+    async function functionResultsBulk() {
+    
+        await new Promise(r => setTimeout(r, 500));
+        await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/sfx_conj_holy.mp3", volume: 0.5}, false);
+    
+        let dialogResultsBulk = new Dialog ({
+            title: "Finding Circle",
+            content: `
+            <style>
+            .image {position: relative; margin-left: auto; margin-right: auto; width: 35px;}
+            .imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+            .image__img {display: block; width: 100%;}
+            .image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+            .image__overlay--blur {backdrop-filter: blur(5px);}
+            .image__overlay--primary {background: #e57509;}
+            .image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+            .image__overlay:hover {opacity: 0.8;}
+            .image__overlay:hover > * {transform: translateY(0);}
+            .image__title {font-weight: bold; text-align: center;}
+            .image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+            .image__count {font-size: 2em;font-weight: bold;}
+            </style>
+            <h2 style="text-align: center">You found 10 runes</h2>
+            <table style="width: 100%;" border="1">
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage0}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem0()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem0(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName0}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName0}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage1}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem1()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem1(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName1}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName1}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage2}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem2()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem2(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName2}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName2}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage3}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem3()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem3(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName3}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName3}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage4}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem4()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem4(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName4}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName4}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage5}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem5()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem5(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName5}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName5}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage6}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem6()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem6(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName6}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName6}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage7}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem7()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem7(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName7}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName7}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage8}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem8()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem8(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName8}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName8}</td>
+            </tr>
+            <tr>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;"><img src=${itemImage} width="35"/></td>
+                <td style="width: 1%; text-align: center; vertical-align: middle; border-style: hidden;">></td>
+                <td style="width: 12%; text-align: center; vertical-align: middle; border-style: hidden;">
+                <div>
+                    <div class="image">
+                        <img class="image__img" src=${newItemImage9}>
+                        <div class="image__overlay image__overlay--primary" onclick="inspectItem9()"><div class="image__title" style="font-size: 0.75em;">Inspect</div></div>
+                    </div>
+                    <script>
+                        async function inspectItem9(){
+                            Object.values(ui.windows).filter(w=>w.options.baseApplication?.includes('Item')).forEach(async win=> await win.close())
+                            const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + "${spirit.name}")
+                            const item = (await userItems.getDocument(userItems.index.find(ent=>ent.name === "${newItemName9}")._id)).sheet.render(true);
+                        }
+                    </script>
+                </div>
+                </td>
+                <td style="width: 75%; text-align: left; vertical-align: middle; border-style: hidden;">${newItemName9}</td>
+            </tr>
+            </table>
+            `,
+            buttons: {
+                buttonAwakenAnother: {
+                    label: `Awaken Another`,
+                    callback: async () => {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogResultsBulk.close(); return}
+                        functionUseRunefinder();
+                    }
+                },
+                buttonGoBack: {
+                    label: `Main Menu`,
+                    callback: async () => {
+                        tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+                        if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+                        else{erSound(); ui.notifications.warn("You must be standing in the circle in order to use it"); await dialogChooseRunefinder.close(); return}
+                        game.macros.find(m=>m.name==="Use Finding Circle").execute();
+                    }
+                }
+            }
+        }, {width: 400, height: 590}).render(true);
+    }
+}
