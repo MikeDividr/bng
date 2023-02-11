@@ -1,0 +1,145 @@
+const erSound = async () => await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/gui_error.mp3", volume: 0.5}, false);
+
+let GMs = game.users.filter(u=>u.data.role == 4); let onlineGM = false
+for(g of GMs){if(g.active == true){onlineGM = true}}
+if(onlineGM == false){erSound(); ui.notifications.error("you can't use this while there isn't a GM logged in"); return;}
+
+if(game.scenes.active.data.name != "The Nave"){erSound(); ui.notifications.error('The GM must activate "The Nave" for you to use the finding circle.'); return;} 
+let spirit = {};
+if(game.users.current.data.role == 4){
+    if(args[0] === "clicked"){erSound(); ui.notifications.warn("GMs can't click to activate! Only players can. GMs must place a token to activate."); return}; spirit = token.actor;
+} else {spirit = game.actors.find(a=>a.name === game.users.current.data.name)}
+if(spirit.data.flags["gm-notes"].notes.includes("this is a spirit") == false){erSound(); ui.notifications.warn("Only spirits may use this circle."); return;}
+
+const area = canvas.scene.tiles.find(t=>t.data.flags.tagger.tags[0] === "finding-click")
+let tok = canvas.tokens.placeables.find(t=>t.name === spirit.name)
+if(args[0] == "clicked"){
+    if(tok.data.x >= area.data.x && tok.data.y >= area.data.y && tok.data.x < (area.data.x + area.data.width) && tok.data.y < (area.data.y + area.data.height)){}
+    else{erSound(); ui.notifications.warn("You must be standing in the circle in order to activate it"); return}
+}
+if(args[0] == "clicked" || args[0] == "stepped"){await AudioHelper.play({src: "media/Audio/Sounds/NWN%20Sounds%201/sfx_conj_enchantment.mp3", volume: 0.5}, false)}
+
+let runefinderImage = `media/Images/Symbols/Icons/Objects/Runefinder%20(0)%20-%20icon.webp`;
+let motefinderImage = `media/Images/Symbols/Icons/Objects/Motefinder%20(0)%20-%20icon.webp`;
+let relicfinderImage = `media/Images/Symbols/Icons/Objects/Relicfinder%20(0)%20-%20icon.webp`;
+
+const userItems = game.packs.find(p=>p.metadata.label === "Items: BnG " + spirit.name)
+const filterDAhl = userItems.index.filter(ent=>ent.name === "Runefinder (Ahl)"); const runefinderAhl = []; for(f of filterDAhl){runefinderAhl.push(await userItems.getDocument(f._id))}
+const filterDBel = userItems.index.filter(ent=>ent.name === "Runefinder (Bel)"); const runefinderBel = []; for(f of filterDBel){runefinderBel.push(await userItems.getDocument(f._id))}
+const filterDKal = userItems.index.filter(ent=>ent.name === "Runefinder (Kal)"); const runefinderKal = []; for(f of filterDKal){runefinderKal.push(await userItems.getDocument(f._id))}
+const filterDRul = userItems.index.filter(ent=>ent.name === "Runefinder (Rul)"); const runefinderRul = []; for(f of filterDRul){runefinderRul.push(await userItems.getDocument(f._id))}
+const filterDSol = userItems.index.filter(ent=>ent.name === "Runefinder (Sol)"); const runefinderSol = []; for(f of filterDSol){runefinderSol.push(await userItems.getDocument(f._id))}
+const filterDVyl = userItems.index.filter(ent=>ent.name === "Runefinder (Vyl)"); const runefinderVyl = []; for(f of filterDVyl){runefinderVyl.push(await userItems.getDocument(f._id))}
+
+const filterMAhl = userItems.index.filter(ent=>ent.name === "Motefinder (Ahl)"); const motefinderAhl = []; for(f of filterMAhl){motefinderAhl.push(await userItems.getDocument(f._id))}
+const filterMBel = userItems.index.filter(ent=>ent.name === "Motefinder (Bel)"); const motefinderBel = []; for(f of filterMBel){motefinderBel.push(await userItems.getDocument(f._id))}
+const filterMKal = userItems.index.filter(ent=>ent.name === "Motefinder (Kal)"); const motefinderKal = []; for(f of filterMKal){motefinderKal.push(await userItems.getDocument(f._id))}
+const filterMRul = userItems.index.filter(ent=>ent.name === "Motefinder (Rul)"); const motefinderRul = []; for(f of filterMRul){motefinderRul.push(await userItems.getDocument(f._id))}
+const filterMSol = userItems.index.filter(ent=>ent.name === "Motefinder (Sol)"); const motefinderSol = []; for(f of filterMSol){motefinderSol.push(await userItems.getDocument(f._id))}
+const filterMVyl = userItems.index.filter(ent=>ent.name === "Motefinder (Vyl)"); const motefinderVyl = []; for(f of filterMVyl){motefinderVyl.push(await userItems.getDocument(f._id))}
+
+const filterRAhl = userItems.index.filter(ent=>ent.name === "Relicfinder (Ahl)"); const relicfinderAhl = []; for(f of filterRAhl){relicfinderAhl.push(await userItems.getDocument(f._id))}
+const filterRBel = userItems.index.filter(ent=>ent.name === "Relicfinder (Bel)"); const relicfinderBel = []; for(f of filterRBel){relicfinderBel.push(await userItems.getDocument(f._id))}
+const filterRKal = userItems.index.filter(ent=>ent.name === "Relicfinder (Kal)"); const relicfinderKal = []; for(f of filterRKal){relicfinderKal.push(await userItems.getDocument(f._id))}
+const filterRRul = userItems.index.filter(ent=>ent.name === "Relicfinder (Rul)"); const relicfinderRul = []; for(f of filterRRul){relicfinderRul.push(await userItems.getDocument(f._id))}
+const filterRSol = userItems.index.filter(ent=>ent.name === "Relicfinder (Sol)"); const relicfinderSol = []; for(f of filterRSol){relicfinderSol.push(await userItems.getDocument(f._id))}
+const filterRVyl = userItems.index.filter(ent=>ent.name === "Relicfinder (Vyl)"); const relicfinderVyl = []; for(f of filterRVyl){relicfinderVyl.push(await userItems.getDocument(f._id))}
+
+let runefinderAhlQ = 0; let motefinderAhlQ = 0; let relicfinderAhlQ = 0; 
+let runefinderBelQ = 0; let motefinderBelQ = 0; let relicfinderBelQ = 0; 
+let runefinderKalQ = 0; let motefinderKalQ = 0; let relicfinderKalQ = 0; 
+let runefinderRulQ = 0; let motefinderRulQ = 0; let relicfinderRulQ = 0; 
+let runefinderSolQ = 0; let motefinderSolQ = 0; let relicfinderSolQ = 0; 
+let runefinderVylQ = 0; let motefinderVylQ = 0; let relicfinderVylQ = 0; 
+
+if(runefinderAhl[0] == undefined){runefinderAhlQ = 0} else {for(d of runefinderAhl){runefinderAhlQ = runefinderAhlQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Ahl)%20-%20icon.webp";}
+if(runefinderBel[0] == undefined){runefinderBelQ = 0} else {for(d of runefinderBel){runefinderBelQ = runefinderBelQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Bel)%20-%20icon.webp";}
+if(runefinderKal[0] == undefined){runefinderKalQ = 0} else {for(d of runefinderKal){runefinderKalQ = runefinderKalQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Kal)%20-%20icon.webp";}
+if(runefinderRul[0] == undefined){runefinderRulQ = 0} else {for(d of runefinderRul){runefinderRulQ = runefinderRulQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Rul)%20-%20icon.webp";}
+if(runefinderSol[0] == undefined){runefinderSolQ = 0} else {for(d of runefinderSol){runefinderSolQ = runefinderSolQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Sol)%20-%20icon.webp";}
+if(runefinderVyl[0] == undefined){runefinderVylQ = 0} else {for(d of runefinderVyl){runefinderVylQ = runefinderVylQ + d.data.data.quantity}; runefinderImage = "media/Images/Symbols/Icons/Objects/Runefinder%20(Vyl)%20-%20icon.webp";}
+
+if(motefinderAhl[0] == undefined){motefinderAhlQ = 0} else {for(d of motefinderAhl){motefinderAhlQ = motefinderAhlQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Ahl)%20-%20icon.webp";}
+if(motefinderBel[0] == undefined){motefinderBelQ = 0} else {for(d of motefinderBel){motefinderBelQ = motefinderBelQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Bel)%20-%20icon.webp";}
+if(motefinderKal[0] == undefined){motefinderKalQ = 0} else {for(d of motefinderKal){motefinderKalQ = motefinderKalQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Kal)%20-%20icon.webp";}
+if(motefinderRul[0] == undefined){motefinderRulQ = 0} else {for(d of motefinderRul){motefinderRulQ = motefinderRulQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Rul)%20-%20icon.webp";}
+if(motefinderSol[0] == undefined){motefinderSolQ = 0} else {for(d of motefinderSol){motefinderSolQ = motefinderSolQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Sol)%20-%20icon.webp";}
+if(motefinderVyl[0] == undefined){motefinderVylQ = 0} else {for(d of motefinderVyl){motefinderVylQ = motefinderVylQ + d.data.data.quantity}; motefinderImage = "media/Images/Symbols/Icons/Objects/Motefinder%20(Vyl)%20-%20icon.webp";}
+
+if(relicfinderAhl[0] == undefined){relicfinderAhlQ = 0} else {for(d of relicfinderAhl){relicfinderAhlQ = relicfinderAhlQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Ahl)%20-%20icon.webp";}
+if(relicfinderBel[0] == undefined){relicfinderBelQ = 0} else {for(d of relicfinderBel){relicfinderBelQ = relicfinderBelQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Bel)%20-%20icon.webp";}
+if(relicfinderKal[0] == undefined){relicfinderKalQ = 0} else {for(d of relicfinderKal){relicfinderKalQ = relicfinderKalQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Kal)%20-%20icon.webp";}
+if(relicfinderRul[0] == undefined){relicfinderRulQ = 0} else {for(d of relicfinderRul){relicfinderRulQ = relicfinderRulQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Rul)%20-%20icon.webp";}
+if(relicfinderSol[0] == undefined){relicfinderSolQ = 0} else {for(d of relicfinderSol){relicfinderSolQ = relicfinderSolQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Sol)%20-%20icon.webp";}
+if(relicfinderVyl[0] == undefined){relicfinderVylQ = 0} else {for(d of relicfinderVyl){relicfinderVylQ = relicfinderVylQ + d.data.data.quantity}; relicfinderImage = "media/Images/Symbols/Icons/Objects/Relicfinder%20(Vyl)%20-%20icon.webp";}
+
+let runefinderQ = (runefinderAhlQ + runefinderBelQ + runefinderKalQ + runefinderRulQ + runefinderSolQ + runefinderVylQ)
+let motefinderQ = (motefinderAhlQ + motefinderBelQ + motefinderKalQ + motefinderRulQ + motefinderSolQ + motefinderVylQ)
+let relicfinderQ = (relicfinderAhlQ + relicfinderBelQ + relicfinderKalQ + relicfinderRulQ + relicfinderSolQ + relicfinderVylQ)
+
+if(runefinderQ == 0){runefinderQ = ""};
+if(motefinderQ == 0){motefinderQ = ""};
+if(relicfinderQ == 0){relicfinderQ = ""};
+
+const imageHover = `
+<style>
+.image {position: relative; margin-left: auto; margin-right: auto; width: 150px;}
+.imageSmall {position: relative; margin-left: auto; margin-right: auto; width: 50px; align-items: center;}
+.image__img {display: block; width: 100%;}
+.image__overlay {cursor: pointer; position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0.6);color: #ffffff;font-family: 'Quicksand', sans-serif;display: flex;flex-direction: column;align-items: center;justify-content: center;opacity: 0;transition: opacity 0.25s;}
+.image__overlay--blur {backdrop-filter: blur(5px);}
+.image__overlay--primary {background: #e57509;}
+.image__overlay > * {transform: translateY(20px);transition: transform 0.25s;}
+.image__overlay:hover {opacity: 0.8;}
+.image__overlay:hover > * {transform: translateY(0);}
+.image__title {font-weight: bold; text-align: center;}
+.image__counter {position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0, 0, 0, 0);color: #ffffff;font-family: 'Quicksand', sans-serif;}
+.image__count {font-size: 2em;font-weight: bold;}
+</style>
+`
+
+let dialogCircleMenu = new Dialog({
+    title: "Finding Circle",
+    content: imageHover + `
+    <table style="width: 100%; border-style: hidden;" border="1">
+        <tr>
+            <td style="width: 33%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Runefinder</b></td>
+            <td style="width: 34%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Motefinder</b></td>
+            <td style="width: 33%; text-align: center; vertical-align: middle; border-style: hidden;"><b>Relicfinder</b></td>
+        </tr>
+        <tr>
+            <td style="width: 33%; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src=${runefinderImage}>
+                <div class="image__counter"><div class="image__count">${runefinderQ}</div></div>
+                <div class="image__overlay image__overlay--primary" id="runefinderId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+            <td style="width: 34%; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src=${motefinderImage}>
+                <div class="image__counter"><div class="image__count">${motefinderQ}</div></div>
+                <div class="image__overlay image__overlay--primary" id="motefinderId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+            <td style="width: 33%; border-style: hidden;">
+                <div class="image">
+                <img class="image__img" src=${relicfinderImage}>
+                <div class="image__counter"><div class="image__count">${relicfinderQ}</div></div>
+                <div class="image__overlay image__overlay--primary" id="relicfinderId"><div class="image__title" style="font-size: 1.5em;">Select & Continue</div></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    `,
+    buttons: {
+        buttonCancel: {
+            label: `Cancel`
+        }
+    },
+    render: (html) => {
+        html.find("#runefinderId").click(async function () {game.macros.find(m=>m.name==="Use Runefinder").execute(spirit.id); await dialogCircleMenu.close();})
+        html.find("#motefinderId").click(async function () {game.macros.find(m=>m.name==="Use Motefinder").execute(spirit.id); await dialogCircleMenu.close();})
+        html.find("#relicfinderId").click(async function () {game.macros.find(m=>m.name==="Use Relicfinder").execute(spirit.id); await dialogCircleMenu.close();})
+    }
+}, {width: 600, height: 300}).render(true);
